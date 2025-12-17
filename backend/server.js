@@ -10,20 +10,19 @@ const productRoute = require('./routes/api/productRoute');
 let mongodb_url = 'mongodb://localhost/';
 let dbName = 'yolomy';
 
-// define a url to connect to the database
-const MONGODB_URI = process.env.MONGODB_URI || mongodb_url + dbName
-mongoose.connect(MONGODB_URI,{useNewUrlParser: true, useUnifiedTopology: true  } )
-let db = mongoose.connection;
+// require a MongoDB connection string via environment variable
+const MONGODB_URI = process.env.MONGODB_URI
+if (!MONGODB_URI) {
+    console.error('MONGODB_URI environment variable is not set. Exiting.')
+    process.exit(1)
+}
 
-// Check Connection
-db.once('open', ()=>{
-    console.log('Database connected successfully')
-})
-
-// Check for DB Errors
-db.on('error', (error)=>{
-    console.log(error);
-})
+mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('Database connected successfully'))
+    .catch((error) => {
+        console.error('Database connection error:', error)
+        process.exit(1)
+    })
 
 // Initializing express
 const app = express()
