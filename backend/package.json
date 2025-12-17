@@ -12,20 +12,20 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Vinge1718/yolo.git"
+    "url": "https://github.com/rmwangi3/yolo.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Vinge1718/yolo/issues"
+    "url": "https://github.com/rmwangi3/yolo.git"
   },
-  "homepage": "https://github.com/Vinge1718/yolo#readme",
+  "homepage": "https://github.com/rmwangi3/yolo#readme",
   "dependencies": {
     "body-parser": "^1.19.0",
     "concurrently": "^5.2.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "mongoose": "^5.9.23",
+    "mongoose": "^8.20.3",
     "multer": "^1.4.2"
   }
 }
