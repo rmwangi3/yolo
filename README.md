@@ -59,4 +59,28 @@ Contact / Next steps
 If you want, I can:
 - Push built images to DockerHub (requires Docker credentials).
 - Create an `archive` branch containing the previous `yolo_backup` snapshot (if you prefer it preserved in git). 
+ 
+DockerHub images (add screenshot)
+
+Once you build and push your images to DockerHub, add a screenshot of the DockerHub repository page showing the image tags (this assignment requires proof of a pushed image and its version tag).
+
+- Place your screenshot files in `docs/` (for example `docs/dockerhub-backend.png` and `docs/dockerhub-client.png`).
+- Then add them to the repo and push:
+
+```bash
+git add docs/dockerhub-backend.png docs/dockerhub-client.png
+git commit -m "Add DockerHub screenshots"
+git push origin master
+```
+
+To embed the screenshots here, the repository already includes a placeholder reference — simply add the files to `docs/` and the images will display below.
+
+Backend DockerHub image (example):
+
+![Backend DockerHub screenshot](docs/dockerhub-backend.png)
+
+Client DockerHub image (example):
+
+![Client DockerHub screenshot](docs/dockerhub-client.png)
+
 
