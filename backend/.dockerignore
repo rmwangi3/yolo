@@ -1,4 +1,12 @@
 node_modules
+.env
+npm-debug.log
+Dockerfile
+*.log
+dist
+build
+.git
+node_modules
 npm-debug.log
 .DS_Store
 .git
