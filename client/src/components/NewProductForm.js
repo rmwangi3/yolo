@@ -16,21 +16,40 @@ function NewProductForm (props) {
     //     })
     // }
 
-    function handleNewProductFormSubmission(event){
-        // event.persist()
+    async function handleNewProductFormSubmission(event){
         event.preventDefault();
 
-        // console.log(event.target.name.value);
-        // console.log(event.target.price.value);
-        // console.log(event.target.files[0]);
-        // console.log(photo)
-        
+        // Check for selected file
+        const fileInput = event.target.photo;
+        let photoUrl = '';
+
+        if(fileInput && fileInput.files && fileInput.files[0]){
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try{
+                const res = await fetch('/api/products/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if(res.ok){
+                    photoUrl = data.imageUrl; // e.g. /images/filename.png
+                } else {
+                    console.error('Image upload failed', data);
+                }
+            }catch(err){
+                console.error('Upload error', err);
+            }
+        }
+
         props.onNewProductCreation({
             name: event.target.name.value,
             price: event.target.price.value,
             description: event.target.description.value,
             quantity: event.target.quantity.value,
-            // id: v4()
+            photo: photoUrl
         });
     }
    

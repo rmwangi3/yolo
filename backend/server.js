@@ -3,21 +3,17 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const multer = require('multer');
 const upload = multer();
+require('dotenv').config();
+const path = require('path');
 
 const productRoute = require('./routes/api/productRoute');
 
 // Connecting to the Database
-let mongodb_url = 'mongodb://localhost/';
-let dbName = 'yolomy';
+const DEFAULT_LOCAL_MONGO = 'mongodb://localhost:27017/yolomy'
 
-// require a MongoDB connection string via environment variable
-const MONGODB_URI = process.env.MONGODB_URI
-if (!MONGODB_URI) {
-    console.error('MONGODB_URI environment variable is not set. Exiting.')
-    process.exit(1)
-}
+const MONGODB_URI = process.env.MONGODB_URI || DEFAULT_LOCAL_MONGO
 
-mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(MONGODB_URI)
     .then(() => console.log('Database connected successfully'))
     .catch((error) => {
         console.error('Database connection error:', error)
@@ -35,6 +31,9 @@ app.use(upload.array());
 
 // Cors 
 app.use(cors());
+
+// Serve uploaded images statically from /images
+app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
 // Use Route
 app.use('/api/products', productRoute)

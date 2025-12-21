@@ -50,17 +50,16 @@ function ReusableForm(props) {
                     <label htmlFor="quantity"> Quantity</label>
                 </div>
                 <br/>
-                {/* <div action="" className= "new-product-for">
+                <div action="" className= "new-product-for">
                     <div className="form-input-material">
-                        <input type = 'file' 
-                            // onChange = {onFileChange}
+                        <input type = 'file'
                             name = 'photo'
                             className = 'form-control-material'
                             id = 'photo'
                         />
-                        <label htmlFor="product-photo"> Product Photo</label>
+                        <label htmlFor="photo"> Product Photo (optional)</label>
                     </div>
-                </div> */}
+                </div>
                 <button type="submit" className="btn btn-primary btn-ghost">{props.buttonText} </button>    
             </form>
         </React.Fragment>

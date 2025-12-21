@@ -13,9 +13,9 @@ function Product (props) {
                 <div className="product" onClick = { () => props.whenProductClicked(props.id)} >
                     <div className="product-img">
                         <img 
-                        src= {Default_image} 
+                        src={props.photo && props.photo.length > 0 ? props.photo : Default_image} 
                         className="img-fluid d-block mx-auto" 
-                        alt = {props.photo}/>
+                        alt = {props.photo || 'product image'}/>
                     </div>
                     <div className="product-name-cost">
                         <h5 className="float-left gold">{props.name} </h5>
