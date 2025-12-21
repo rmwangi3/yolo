@@ -1,8 +1,11 @@
 const express = require('express')
 const router = express.Router();
+const path = require('path')
 
 // Product Model
 const Product = require('../../models/Products');
+// Upload middleware (multer)
+const upload = require('../../upload');
 
 // @route GET /products
 // @desc Get ALL products
@@ -33,6 +36,22 @@ router.post('/', async (req, res) => {
         console.error(err)
         res.status(500).json({ error: 'Failed to create product' })
     }
+})
+
+// @route POST /products/upload
+// @desc  Upload a product image
+router.post('/upload', (req, res) => {
+    upload(req, res, function(err){
+        if(err){
+            return res.status(400).json({ error: err.toString() });
+        }
+        if(!req.file){
+            return res.status(400).json({ error: 'No file uploaded' })
+        }
+        // return the public URL where the image can be accessed
+        const imageUrl = `/images/${req.file.filename}`
+        res.json({ imageUrl })
+    })
 })
 // @route PUT api/products/:id
 // @desc  Update a product
