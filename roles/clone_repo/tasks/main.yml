@@ -1,0 +1,55 @@
+---
+# Clone Repository Role - Tasks for cloning the application from GitHub
+
+- name: Ensure application directory exists
+  file:
+    path: "{{ app_directory }}"
+    state: directory
+    mode: '0755'
+    owner: vagrant
+    group: vagrant
+  tags:
+    - repo-setup
+
+- name: Clone YOLO application from GitHub
+  git:
+    repo: "{{ github_repo }}"
+    dest: "{{ app_directory }}"
+    version: "{{ github_branch }}"
+    force: yes
+    update: yes
+  become_user: vagrant
+  tags:
+    - repo-clone
+
+- name: Ensure image upload directory exists
+  file:
+    path: "{{ image_upload_path }}"
+    state: directory
+    mode: '0755'
+    owner: vagrant
+    group: vagrant
+    recurse: yes
+  tags:
+    - repo-setup
+
+- name: Create .env file for backend
+  copy:
+    content: |
+      MONGODB_URI={{ mongodb_uri }}
+      PORT={{ backend_port }}
+    dest: "{{ app_directory }}/.env"
+    mode: '0644'
+    owner: vagrant
+    group: vagrant
+  tags:
+    - repo-configuration
+
+- name: Display cloned repository information
+  debug:
+    msg:
+      - "Repository cloned successfully to {{ app_directory }}"
+      - "Branch: {{ github_branch }}"
+      - "Environment file created"
+  tags:
+    - repo-info

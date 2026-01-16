@@ -1,0 +1,70 @@
+---
+# Backend Role - Tasks for building and deploying the Node.js backend
+
+- name: Build backend Docker image
+  block:
+    - name: Build backend image from Dockerfile
+      docker_image:
+        name: "{{ backend_image }}"
+        build:
+          path: "{{ backend_context }}"
+          pull: yes
+        source: build
+        state: present
+        force_source: yes
+      tags:
+        - backend-build
+    
+    - name: Verify backend image was created
+      docker_image_info:
+        name: "{{ backend_image }}"
+      register: backend_image_info
+      tags:
+        - backend-verify
+    
+    - name: Display backend image information
+      debug:
+        msg: "Backend image {{ backend_image }} built successfully"
+      when: backend_image_info.images | length > 0
+      tags:
+        - backend-info
+  tags:
+    - backend-image
+
+- name: Deploy backend container
+  block:
+    - name: Stop existing backend container if running
+      docker_container:
+        name: "{{ backend_container_name }}"
+        state: absent
+      ignore_errors: yes
+      tags:
+        - backend-cleanup
+    
+    - name: Start backend container
+      docker_container:
+        name: "{{ backend_container_name }}"
+        image: "{{ backend_image }}"
+        state: started
+        restart_policy: unless-stopped
+        networks:
+          - name: "{{ docker_network_name }}"
+        ports:
+          - "{{ backend_port }}:{{ backend_port }}"
+        env:
+          MONGODB_URI: "{{ mongodb_uri }}"
+          PORT: "{{ backend_port | string }}"
+        volumes:
+          - "{{ image_upload_path }}:/usr/src/app/public/images"
+      tags:
+        - backend-deploy
+    
+    - name: Wait for backend to be ready
+      wait_for:
+        port: "{{ backend_port }}"
+        delay: 10
+        timeout: 60
+      tags:
+        - backend-wait
+  tags:
+    - backend-deployment

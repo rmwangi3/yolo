@@ -1,0 +1,74 @@
+---
+# MongoDB Role - Tasks for setting up MongoDB container
+
+- name: Create Docker network for YOLO application
+  docker_network:
+    name: "{{ docker_network_name }}"
+    driver: "{{ docker_network_driver }}"
+    state: present
+  tags:
+    - mongodb-network
+    - network-setup
+
+- name: Create Docker volume for MongoDB data persistence
+  docker_volume:
+    name: "{{ mongodb_volume }}"
+    state: present
+  tags:
+    - mongodb-volume
+    - volume-setup
+
+- name: Pull MongoDB Docker image
+  docker_image:
+    name: "mongo"
+    tag: "{{ mongodb_version }}"
+    source: pull
+  tags:
+    - mongodb-image
+    - image-pull
+
+- name: Start MongoDB container
+  block:
+    - name: Run MongoDB container
+      docker_container:
+        name: "{{ mongodb_container_name }}"
+        image: "mongo:{{ mongodb_version }}"
+        state: started
+        restart_policy: unless-stopped
+        networks:
+          - name: "{{ docker_network_name }}"
+        volumes:
+          - "{{ mongodb_volume }}:/data/db"
+        exposed_ports:
+          - "{{ mongodb_port }}"
+        healthcheck:
+          test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+          interval: 10s
+          timeout: 5s
+          retries: 5
+      tags:
+        - mongodb-container
+    
+    - name: Wait for MongoDB to be ready
+      wait_for:
+        timeout: 30
+      tags:
+        - mongodb-wait
+    
+    - name: Verify MongoDB container is running
+      docker_container_info:
+        name: "{{ mongodb_container_name }}"
+      register: mongodb_info
+      tags:
+        - mongodb-verify
+    
+    - name: Display MongoDB status
+      debug:
+        msg:
+          - "MongoDB container: {{ mongodb_container_name }}"
+          - "Status: {{ mongodb_info.container.State.Status }}"
+          - "Running: {{ mongodb_info.container.State.Running }}"
+      tags:
+        - mongodb-info
+  tags:
+    - mongodb-deployment

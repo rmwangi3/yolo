@@ -1,8 +1,49 @@
+# Environment variables
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Node
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
 dist/
 build/
-npm-debug.log
+
+# OS
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Vagrant
+.vagrant/
+*.log
+vagrant.log
+
+# Ansible
+ansible.log
+*.retry
+/tmp/ansible_facts/
+
+# Backups
 yolo_backup/
-yolo_backup/
+*~
+*.bak
+*.backup
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Docker
+*.pid
+*.seed
+*.pid.lock
+

@@ -1,0 +1,65 @@
+---
+# Client Role - Tasks for building and deploying the React frontend with nginx
+
+- name: Build client Docker image
+  block:
+    - name: Build client image from multi-stage Dockerfile
+      docker_image:
+        name: "{{ client_image }}"
+        build:
+          path: "{{ client_context }}"
+          pull: yes
+        source: build
+        state: present
+        force_source: yes
+      tags:
+        - client-build
+    
+    - name: Verify client image was created
+      docker_image_info:
+        name: "{{ client_image }}"
+      register: client_image_info
+      tags:
+        - client-verify
+    
+    - name: Display client image information
+      debug:
+        msg: "Client image {{ client_image }} built successfully"
+      when: client_image_info.images | length > 0
+      tags:
+        - client-info
+  tags:
+    - client-image
+
+- name: Deploy client container
+  block:
+    - name: Stop existing client container if running
+      docker_container:
+        name: "{{ client_container_name }}"
+        state: absent
+      ignore_errors: yes
+      tags:
+        - client-cleanup
+    
+    - name: Start client container with nginx
+      docker_container:
+        name: "{{ client_container_name }}"
+        image: "{{ client_image }}"
+        state: started
+        restart_policy: unless-stopped
+        networks:
+          - name: "{{ docker_network_name }}"
+        ports:
+          - "{{ client_port }}:{{ client_nginx_port }}"
+      tags:
+        - client-deploy
+    
+    - name: Wait for client to be ready
+      wait_for:
+        port: "{{ client_port }}"
+        delay: 5
+        timeout: 60
+      tags:
+        - client-wait
+  tags:
+    - client-deployment

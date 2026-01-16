@@ -1,0 +1,133 @@
+---
+# Docker Role - Tasks for installing Docker and Docker Compose
+
+- name: Install Docker prerequisites
+  block:
+    - name: Install Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      tags:
+        - docker-install
+    
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
+      tags:
+        - docker-install
+    
+    - name: Update apt cache after adding Docker repo
+      apt:
+        update_cache: yes
+      tags:
+        - docker-install
+  tags:
+    - docker-setup
+
+- name: Install Docker Engine
+  block:
+    - name: Install Docker CE
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+      tags:
+        - docker-install
+    
+    - name: Ensure Docker service is started and enabled
+      service:
+        name: docker
+        state: started
+        enabled: yes
+      tags:
+        - docker-service
+  tags:
+    - docker-setup
+
+- name: Configure Docker users and permissions
+  block:
+    - name: Add users to docker group
+      user:
+        name: "{{ item }}"
+        groups: docker
+        append: yes
+      loop: "{{ docker_users }}"
+      when: docker_users is defined
+      tags:
+        - docker-users
+    
+    - name: Reset SSH connection to apply group changes
+      meta: reset_connection
+      tags:
+        - docker-users
+  tags:
+    - docker-configuration
+
+- name: Install Docker Compose standalone (legacy support)
+  block:
+    - name: Download Docker Compose binary
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-x86_64"
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+      tags:
+        - docker-compose
+    
+    - name: Verify Docker Compose installation
+      command: docker-compose --version
+      register: docker_compose_version_output
+      changed_when: false
+      tags:
+        - docker-compose
+    
+    - name: Display Docker Compose version
+      debug:
+        var: docker_compose_version_output.stdout
+      tags:
+        - docker-compose
+  tags:
+    - docker-setup
+
+- name: Install Python Docker SDK
+  pip:
+    name:
+      - docker
+      - docker-compose
+    state: present
+    executable: pip3
+  tags:
+    - docker-python
+
+- name: Verify Docker installation
+  block:
+    - name: Check Docker version
+      command: docker --version
+      register: docker_version_output
+      changed_when: false
+      tags:
+        - docker-verify
+    
+    - name: Display Docker version
+      debug:
+        var: docker_version_output.stdout
+      tags:
+        - docker-verify
+    
+    - name: Test Docker with hello-world
+      docker_container:
+        name: hello-world-test
+        image: hello-world
+        state: started
+        detach: no
+        cleanup: yes
+        auto_remove: yes
+      tags:
+        - docker-verify
+  tags:
+    - docker-verification

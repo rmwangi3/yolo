@@ -1,0 +1,82 @@
+---
+# Main Ansible Playbook for YOLO E-commerce Application
+# This playbook orchestrates the deployment of a containerized MERN application
+# using Docker containers for MongoDB, Backend (Node.js), and Client (React + nginx)
+
+- name: Deploy YOLO E-commerce Application with Docker
+  hosts: all
+  become: yes
+  gather_facts: yes
+  
+  vars_files:
+    - vars/main.yml
+  
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      tags:
+        - always
+        - setup
+    
+    - name: Install required system packages
+      apt:
+        name:
+          - git
+          - curl
+          - wget
+          - python3-pip
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
+          - lsb-release
+        state: present
+      tags:
+        - always
+        - setup
+  
+  roles:
+    - role: docker
+      tags:
+        - docker
+        - setup
+    
+    - role: clone_repo
+      tags:
+        - clone
+        - setup
+    
+    - role: mongodb
+      tags:
+        - mongodb
+        - database
+        - containers
+    
+    - role: backend
+      tags:
+        - backend
+        - api
+        - containers
+    
+    - role: client
+      tags:
+        - client
+        - frontend
+        - containers
+  
+  post_tasks:
+    - name: Display application access information
+      debug:
+        msg:
+          - "================================================================"
+          - "YOLO E-commerce Application Deployment Complete!"
+          - "================================================================"
+          - "Frontend URL: http://{{ ansible_default_ipv4.address }}:3000"
+          - "Backend API: http://{{ ansible_default_ipv4.address }}:5000/api/products"
+          - "================================================================"
+          - "You can now access the application from your browser."
+          - "Test the 'Add Product' functionality to verify persistence."
+          - "================================================================"
+      tags:
+        - always
