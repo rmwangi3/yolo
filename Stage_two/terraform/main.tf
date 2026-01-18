@@ -25,9 +25,9 @@ resource "null_resource" "vagrant_vm" {
 
 output "vm_info" {
   value = {
-    status  = "Vagrant VM provisioned"
-    ip      = "192.168.56.10"
-    ports   = {
+    status = "Vagrant VM provisioned"
+    ip     = "192.168.56.10"
+    ports = {
       frontend = 3000
       backend  = 5000
     }
