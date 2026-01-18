@@ -1,149 +1,83 @@
-# Yolo (Containerized E-commerce with Ansible Automation)
+# Yolo E-commerce - Ansible & Terraform Deployment
 
-This repository contains a containerized MERN-style e-commerce demo using Docker, docker-compose, and Ansible orchestration for automated deployment.
+Containerized MERN e-commerce application with Docker, Ansible, and Terraform.
 
-## Table of Contents
-- [Quick Start (Docker Compose)](#quick-start-docker-compose)
-- [Ansible Automated Deployment](#ansible-automated-deployment)
-- [Persistence](#persistence)
-- [Important Files](#important-files)
-- [Testing the Application](#testing-the-application)
-- [Troubleshooting](#troubleshooting)
+## Stage 1: Ansible Deployment
 
----
-
-## Quick Start (Docker Compose)
-
-For manual deployment using Docker Compose:
-
-1. Clone the repo:
+**Prerequisites**: Vagrant, VirtualBox, Ansible
 
 ```bash
 git clone https://github.com/rmwangi3/yolo.git
 cd yolo
-```
-
-2. Build and run the stack:
-
-```bash
-docker-compose up --build
-```
-
-3. Access the app in your browser:
-
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000/api/products
-
----
-
-## Ansible Automated Deployment
-
-This project includes full Ansible automation for deploying the YOLO e-commerce application on a Vagrant-provisioned Ubuntu 20.04 VM.
-
-### Prerequisites
-
-Ensure you have the following installed on your host machine:
-- **Vagrant** (2.2.0+)
-- **VirtualBox** (6.1+)
-- **Ansible** (2.9+)
-
-### Installation Steps
-
-1. **Clone the repository**:
-```bash
-git clone https://github.com/rmwangi3/yolo.git
-cd yolo
-```
-
-2. **Start the Vagrant VM and run Ansible provisioning**:
-```bash
 vagrant up
 ```
 
-This single command will:
-- Download the Ubuntu 20.04 box (Jeff Geerling's trusted image)
-- Create and configure the VM
-- Run the Ansible playbook automatically
-- Install Docker and dependencies
-- Clone the application from GitHub
-- Build and deploy all containers (MongoDB, Backend, Frontend)
-- Verify the deployment
+**Access**:
+- Frontend: http://192.168.56.10:3000
+- Backend: http://192.168.56.10:5000/api/products
 
-3. **Access the application**:
-- **Frontend**: http://192.168.56.10:3000 or http://localhost:3000
-- **Backend API**: http://192.168.56.10:5000/api/products or http://localhost:5000/api/products
-
-### Manual Ansible Playbook Execution
-
-If you need to re-run the playbook without destroying the VM:
+## Stage 2: Terraform + Ansible Integration
 
 ```bash
-# Run the complete playbook
+cd Stage_two
+ansible-playbook playbook.yml -i ../inventory
+```
+
+This integrates Terraform for infrastructure provisioning with Ansible for configuration.
+
+## Manual Deployment
+
+```bash
+# Docker Compose
+docker-compose up --build
+
+# Ansible only
 ansible-playbook -i inventory playbook.yml
 
-# Run specific roles using tags
-ansible-playbook -i inventory playbook.yml --tags docker
-ansible-playbook -i inventory playbook.yml --tags backend,client
-ansible-playbook -i inventory playbook.yml --tags test
+# With tags
+ansible-playbook -i inventory playbook.yml --tags docker,mongodb
 
-# Skip certain roles
-ansible-playbook -i inventory playbook.yml --skip-tags setup
+# Terraform only (Stage 2)
+cd Stage_two/terraform && terraform init && terraform apply
 ```
 
-### Project Structure
-
-```
-yolo/
-├── Vagrantfile              # Vagrant VM configuration
-├── ansible.cfg              # Ansible configuration
-├── inventory                # Ansible inventory file
-├── playbook.yml            # Main Ansible playbook
-├── vars/
-│   └── main.yml            # Variables for deployment
-├── roles/
-│   ├── docker/             # Docker installation role
-│   │   └── tasks/
-│   │       └── main.yml
-│   ├── clone_repo/         # Repository cloning role
-│   │   └── tasks/
-│   │       └── main.yml
-│   ├── mongodb/            # MongoDB container role
-│   │   └── tasks/
-│   │       └── main.yml
-│   ├── backend/            # Backend container role
-│   │   └── tasks/
-│   │       └── main.yml
-│   └── client/             # Frontend container role
-│       └── tasks/
-│           └── main.yml
-├── docker-compose.yml       # Docker Compose configuration
-├── explanation.md           # Detailed explanation of implementations
-└── README.md               # This file
-```
-
-### Vagrant Commands
+## Vagrant Commands
 
 ```bash
-# Start and provision the VM
-vagrant up
+vagrant up          # Start VM
+vagrant ssh         # SSH into VM
+vagrant halt        # Stop VM
+vagrant destroy     # Remove VM
+vagrant provision   # Re-run Ansible
+```
 
-# SSH into the VM
-vagrant ssh
+---
 
-# Reload VM (restart with re-provisioning)
-vagrant reload --provision
+## Troubleshooting VirtualBox Issues
 
-# Stop the VM
-vagrant halt
+If you encounter VirtualBox errors (guru meditation, locked VM), use these alternatives:
 
-# Destroy the VM (clean slate)
-vagrant destroy
+### Option 1: Docker Compose (Recommended)
+```bash
+docker-compose up -d
+```
+Access at http://localhost:3000 and http://localhost:5000
 
-# Check VM status
-vagrant status
+### Option 2: Ansible on Localhost
+```bash
+ansible-playbook -i inventory_local playbook.yml --skip-tags docker -e "ansible_become_pass=YOUR_PASSWORD"
+```
 
-# Re-run Ansible provisioning only
-vagrant provision
+### Option 3: Fix VirtualBox
+```bash
+# Kill stuck processes
+killall VBoxHeadless VBoxManage VirtualBox VirtualBoxVM
+
+# Destroy and recreate
+vagrant destroy -f && vagrant up
+
+# If still failing, restart Docker service
+sudo systemctl restart docker
 ```
 
 ---

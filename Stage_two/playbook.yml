@@ -1,0 +1,45 @@
+---
+- name: Terraform and Ansible Integration - YOLO Deployment
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: Initialize Terraform
+      command: terraform init
+      args:
+        chdir: terraform
+      register: tf_init
+
+    - name: Apply Terraform configuration
+      command: terraform apply -auto-approve
+      args:
+        chdir: terraform
+      register: tf_apply
+
+    - name: Display Terraform output
+      command: terraform output -json
+      args:
+        chdir: terraform
+      register: tf_output
+
+    - name: Show deployment info
+      debug:
+        msg:
+          - "Terraform provisioning complete"
+          - "VM IP: 192.168.56.10"
+          - "Frontend: http://192.168.56.10:3000"
+          - "Backend: http://192.168.56.10:5000/api/products"
+
+- name: Configure application via Ansible
+  hosts: all
+  become: yes
+  vars_files:
+    - ../vars/main.yml
+
+  roles:
+    - { role: ../roles/docker, tags: [docker] }
+    - { role: ../roles/clone_repo, tags: [clone] }
+    - { role: ../roles/mongodb, tags: [mongodb] }
+    - { role: ../roles/backend, tags: [backend] }
+    - { role: ../roles/client, tags: [client] }

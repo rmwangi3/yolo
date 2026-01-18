@@ -262,16 +262,49 @@ After deployment, test the "Add Product" functionality:
 4. Run `vagrant reload` to restart VM
 5. Verify product persistence after restart
 
-## 10. Future Enhancements
+## 10. Stage 2: Terraform Integration
 
-### Potential Improvements
-- **Stage 2 Integration**: Add Terraform for infrastructure provisioning
-- **Secrets management**: Use Ansible Vault for sensitive data
-- **CI/CD integration**: Add GitHub Actions workflow
-- **Monitoring**: Add Prometheus/Grafana for observability
-- **Backup automation**: Scheduled MongoDB backups
-- **SSL/TLS**: Add HTTPS support with Let's Encrypt
-- **Load balancing**: Add nginx reverse proxy for scalability
+### Overview
+Stage 2 combines Terraform for infrastructure provisioning with Ansible for configuration management, providing a complete Infrastructure as Code (IaC) solution.
+
+### Implementation Details
+
+**Directory Structure**:
+```
+Stage_two/
+├── terraform/
+│   ├── main.tf       # Terraform resources
+│   └── variables.tf  # Terraform variables
+├── playbook.yml      # Integrated Ansible playbook
+└── README.md         # Stage 2 documentation
+```
+
+**Terraform Resources**:
+- Uses `null_resource` with `local-exec` provisioner to invoke Vagrant
+- Manages VM lifecycle (create/destroy)
+- Outputs VM connection details
+
+**Ansible Integration**:
+- Playbook invokes Terraform commands (`terraform init`, `terraform apply`)
+- After infrastructure provisioning, runs Ansible roles for configuration
+- Single command deployment: infrastructure + configuration
+
+**Workflow**:
+1. Terraform provisions the Vagrant VM
+2. Ansible configures Docker, clones code, deploys containers
+3. Application is ready for use
+
+**Usage**:
+```bash
+cd Stage_two
+ansible-playbook playbook.yml -i ../inventory
+```
+
+### Benefits of Terraform + Ansible
+- **Separation of concerns**: Infrastructure (Terraform) vs Configuration (Ansible)
+- **Version control**: Infrastructure and configuration as code
+- **Idempotency**: Safe to run multiple times
+- **Flexibility**: Can target different providers (AWS, Azure, etc.)
 
 ## 11. Troubleshooting Guide
 

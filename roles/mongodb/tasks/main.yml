@@ -1,51 +1,29 @@
 ---
-# MongoDB Role - Tasks for setting up MongoDB container
-
-- name: Create Docker network for YOLO application
+- name: Create Docker network
   docker_network:
     name: "{{ docker_network_name }}"
-    driver: "{{ docker_network_driver }}"
     state: present
-  tags:
-    - mongodb-network
-    - network-setup
 
-- name: Create Docker volume for MongoDB data persistence
+- name: Create MongoDB volume
   docker_volume:
     name: "{{ mongodb_volume }}"
     state: present
-  tags:
-    - mongodb-volume
-    - volume-setup
 
-- name: Pull MongoDB Docker image
+- name: Pull MongoDB image
   docker_image:
-    name: "mongo"
-    tag: "{{ mongodb_version }}"
+    name: "mongo:{{ mongodb_version }}"
     source: pull
-  tags:
-    - mongodb-image
-    - image-pull
 
-- name: Start MongoDB container
-  block:
-    - name: Run MongoDB container
-      docker_container:
-        name: "{{ mongodb_container_name }}"
-        image: "mongo:{{ mongodb_version }}"
-        state: started
-        restart_policy: unless-stopped
-        networks:
-          - name: "{{ docker_network_name }}"
-        volumes:
-          - "{{ mongodb_volume }}:/data/db"
-        exposed_ports:
-          - "{{ mongodb_port }}"
-        healthcheck:
-          test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
-          interval: 10s
-          timeout: 5s
-          retries: 5
+- name: Run MongoDB container
+  docker_container:
+    name: "{{ mongodb_container_name }}"
+    image: "mongo:{{ mongodb_version }}"
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: "{{ docker_network_name }}"
+    volumes:
+      - "{{ mongodb_volume }}:/data/db"
       tags:
         - mongodb-container
     

@@ -1,45 +1,30 @@
 ---
-# Variables for YOLO E-commerce Application Deployment
-
-# Application Configuration
-app_name: "yolo"
+# App
 app_directory: "/opt/yolo"
 github_repo: "https://github.com/rmwangi3/yolo.git"
 github_branch: "master"
 
-# Docker Configuration
-docker_compose_version: "2.20.2"
-docker_users:
-  - vagrant
-
-# MongoDB Configuration
+# MongoDB
 mongodb_version: "5.0"
 mongodb_container_name: "mongo"
 mongodb_port: 27017
 mongodb_volume: "mongo-data"
 mongodb_uri: "mongodb://mongo:27017/yolomy"
 
-# Backend Configuration
+# Backend
 backend_container_name: "backend"
 backend_port: 5000
 backend_image: "rmwangi3/yolo-backend:1.0.0"
 backend_context: "{{ app_directory }}/backend"
 
-# Client/Frontend Configuration
+# Client
 client_container_name: "client"
 client_port: 3000
-client_nginx_port: 80
 client_image: "rmwangi3/yolo-client:1.0.0"
 client_context: "{{ app_directory }}/client"
 
-# Docker Network Configuration
+# Network
 docker_network_name: "yolo-network"
-docker_network_driver: "bridge"
 
-# Environment Variables for Backend
-backend_env_vars:
-  MONGODB_URI: "{{ mongodb_uri }}"
-  PORT: "{{ backend_port }}"
-
-# Persistent Volume Paths
+# Paths
 image_upload_path: "{{ app_directory }}/backend/public/images"
