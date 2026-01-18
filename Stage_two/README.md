@@ -6,7 +6,7 @@ This stage combines Terraform for infrastructure provisioning with Ansible for c
 ## Structure
 ```
 Stage_two/
-├── terraform/          # Terraform configurations
+├── terraform/          # Terraform Integrations
 │   ├── main.tf        # Main Terraform config
 │   └── variables.tf   # Variable definitions
 ├── playbook.yml       # Integrated playbook
@@ -21,11 +21,11 @@ cd Stage_two
 ansible-playbook playbook.yml -i ../inventory
 ```
 
-This will:
-1. Initialize Terraform
-2. Provision infrastructure (Vagrant VM)
-3. Configure the VM with Ansible
-4. Deploy all containers
+From this, we expect that:
+1. Terraform will be initialized
+2. Provisioned infrastructure (Vagrant VM)
+3. The VM with Ansible will be configured
+4. All containers will be deployed
 
 ### Manual Terraform Operations
 ```bash

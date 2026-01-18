@@ -1,6 +1,6 @@
 # Yolo E-commerce Deployment
 
-MERN stack e-commerce app deployed with Ansible and Terraform.
+e-commerce app deployed with Ansible and Terraform.
 
 ## Quick Start
 
