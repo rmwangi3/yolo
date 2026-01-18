@@ -22,10 +22,10 @@
     restart_policy: unless-stopped
     networks:
       - name: "{{ docker_network_name }}"
-    volumes:
-      - "{{ mongodb_volume }}:/data/db"
-      tags:
-        - mongodb-container
+        volumes:
+          - "{{ mongodb_volume }}:/data/db"
+        tags:
+          - mongodb-container
     
     - name: Wait for MongoDB to be ready
       wait_for:
@@ -40,13 +40,11 @@
       tags:
         - mongodb-verify
     
-    - name: Display MongoDB status
-      debug:
-        msg:
-          - "MongoDB container: {{ mongodb_container_name }}"
-          - "Status: {{ mongodb_info.container.State.Status }}"
-          - "Running: {{ mongodb_info.container.State.Running }}"
-      tags:
-        - mongodb-info
-  tags:
-    - mongodb-deployment
+  - name: Display MongoDB status
+    debug:
+      msg:
+        - "MongoDB container: {{ mongodb_container_name }}"
+        - "Status: {{ mongodb_info.container.State.Status }}"
+        - "Running: {{ mongodb_info.container.State.Running }}"
+    tags:
+      - mongodb-info
