@@ -1,0 +1,54 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  # Use Ubuntu 20.04 box
+  config.vm.box = "ubuntu/focal64"
+  
+  # Configure VM resources (HP EliteBook 830 G5 optimized)
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "512"
+    vb.cpus = 1
+    vb.name = "yolo-stage2-vm"
+    vb.gui = false
+    
+    # HP EliteBook 830 G5 specific VirtualBox settings
+    # These settings address known virtualization issues on HP business laptops
+    vb.customize ["modifyvm", :id, "--ioapic", "on"]
+    vb.customize ["modifyvm", :id, "--chipset", "ich9"]
+    vb.customize ["modifyvm", :id, "--firmware", "bios"]
+    vb.customize ["modifyvm", :id, "--hpet", "on"]
+    vb.customize ["modifyvm", :id, "--hwvirtex", "on"]
+    vb.customize ["modifyvm", :id, "--nestedpaging", "on"]
+    vb.customize ["modifyvm", :id, "--largepages", "on"]
+    vb.customize ["modifyvm", :id, "--vtxvpid", "on"]
+    vb.customize ["modifyvm", :id, "--vtxux", "on"]
+    vb.customize ["modifyvm", :id, "--pae", "on"]
+    # Disable problematic features for HP EliteBook
+    vb.customize ["modifyvm", :id, "--nested-hw-virt", "off"]
+    vb.customize ["modifyvm", :id, "--paravirtprovider", "legacy"]
+  end
+  
+  # Network configuration
+  config.vm.network "private_network", ip: "192.168.56.10"
+  
+  # Port forwarding for the application (with auto-correct for conflicts)
+  config.vm.network "forwarded_port", guest: 3000, host: 3000, host_ip: "127.0.0.1", auto_correct: true
+  config.vm.network "forwarded_port", guest: 5000, host: 5000, host_ip: "127.0.0.1", auto_correct: true
+  config.vm.network "forwarded_port", guest: 27017, host: 27017, host_ip: "127.0.0.1", auto_correct: true
+  
+  # Sync the project folder
+  config.vm.synced_folder ".", "/vagrant", disabled: false
+  
+  # Hostname
+  config.vm.hostname = "yolo-stage2"
+  
+  # Install Python (required for Ansible)
+  config.vm.provision "shell", inline: <<-SHELL
+    apt-get update
+    apt-get install -y python3 python3-pip
+  SHELL
+  
+  # Message
+  config.vm.post_up_message = "YOLO Stage 2 VM is ready! Run 'terraform apply' to provision with Terraform and Ansible."
+end

@@ -1,0 +1,16 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform.lock.hcl
+
+# Vagrant
+.vagrant/
+*.log
+
+# General
+.DS_Store
+*.swp
+*.swo
+*~
