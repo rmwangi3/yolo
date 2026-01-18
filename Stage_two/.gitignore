@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Terraform
 .terraform/
 *.tfstate
@@ -14,3 +15,12 @@
 *.swp
 *.swo
 *~
+=======
+# Terraform state files
+*.tfstate
+*.tfstate.backup
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+>>>>>>> master

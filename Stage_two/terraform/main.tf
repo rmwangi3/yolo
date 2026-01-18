@@ -1,6 +1,9 @@
 terraform {
   required_version = ">= 1.0"
+<<<<<<< HEAD
   
+=======
+>>>>>>> master
   required_providers {
     null = {
       source  = "hashicorp/null"
@@ -9,6 +12,7 @@ terraform {
   }
 }
 
+<<<<<<< HEAD
 # Null resource to trigger Vagrant provisioning
 resource "null_resource" "vagrant_provision" {
   triggers = {
@@ -46,5 +50,30 @@ resource "null_resource" "verify_deployment" {
 
   provisioner "local-exec" {
     command = "echo 'Terraform provisioning complete. Application should be accessible at http://localhost:3000'"
+=======
+resource "null_resource" "vagrant_vm" {
+  triggers = {
+    always_run = "${timestamp()}"
+  }
+
+  provisioner "local-exec" {
+    command = "cd ../.. && vagrant up"
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "cd ../.. && vagrant destroy -f"
+  }
+}
+
+output "vm_info" {
+  value = {
+    status = "Vagrant VM provisioned"
+    ip     = "192.168.56.10"
+    ports = {
+      frontend = 3000
+      backend  = 5000
+    }
+>>>>>>> master
   }
 }

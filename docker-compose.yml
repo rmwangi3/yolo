@@ -8,7 +8,7 @@ services:
       - yolo-network
 
   backend:
-    image: rmwangi3/yolo-backend:1.0.0  # <-- Docker Hub username + tag
+    image: rmwangi3/yolo-backend:1.0.0
     build:
       context: ./backend
     depends_on:
@@ -26,7 +26,7 @@ services:
       - yolo-network
 
   client:
-    image: rmwangi3/yolo-client:1.0.0  # <-- Docker Hub username + tag
+    image: rmwangi3/yolo-client:1.0.0
     build:
       context: ./client
     ports:

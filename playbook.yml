@@ -1,13 +1,7 @@
 ---
-# Main Ansible Playbook for YOLO E-commerce Application
-# This playbook orchestrates the deployment of a containerized MERN application
-# using Docker containers for MongoDB, Backend (Node.js), and Client (React + nginx)
-
-- name: Deploy YOLO E-commerce Application with Docker
+- name: Deploy YOLO E-commerce Application
   hosts: all
   become: yes
-  gather_facts: yes
-  
   vars_files:
     - vars/main.yml
   
@@ -16,67 +10,27 @@
       apt:
         update_cache: yes
         cache_valid_time: 3600
-      tags:
-        - always
-        - setup
+      ignore_errors: yes
+      tags: always
     
-    - name: Install required system packages
+    - name: Install system packages
       apt:
-        name:
-          - git
-          - curl
-          - wget
-          - python3-pip
-          - apt-transport-https
-          - ca-certificates
-          - gnupg
-          - lsb-release
+        name: [git, curl, python3-pip, apt-transport-https]
         state: present
-      tags:
-        - always
-        - setup
+      tags: setup
   
   roles:
-    - role: docker
-      tags:
-        - docker
-        - setup
-    
-    - role: clone_repo
-      tags:
-        - clone
-        - setup
-    
-    - role: mongodb
-      tags:
-        - mongodb
-        - database
-        - containers
-    
-    - role: backend
-      tags:
-        - backend
-        - api
-        - containers
-    
-    - role: client
-      tags:
-        - client
-        - frontend
-        - containers
+    - { role: docker, tags: [docker, setup] }
+    - { role: clone_repo, tags: [clone, setup] }
+    - { role: mongodb, tags: [mongodb, containers] }
+    - { role: backend, tags: [backend, containers] }
+    - { role: client, tags: [client, containers] }
   
   post_tasks:
-    - name: Display application access information
+    - name: Display deployment info
       debug:
         msg:
-          - "================================================================"
-          - "YOLO E-commerce Application Deployment Complete!"
-          - "================================================================"
-          - "Frontend URL: http://{{ ansible_default_ipv4.address }}:3000"
-          - "Backend API: http://{{ ansible_default_ipv4.address }}:5000/api/products"
-          - "================================================================"
-          - "You can now access the application from your browser."
-          - "Test the 'Add Product' functionality to verify persistence."
-          - "================================================================"
-      tags:
-        - always
+          - "Deployment Complete!"
+          - "Frontend: http://{{ ansible_default_ipv4.address }}:3000"
+          - "Backend: http://{{ ansible_default_ipv4.address }}:5000/api/products"
+      tags: always
