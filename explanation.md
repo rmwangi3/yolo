@@ -98,7 +98,7 @@ The terraform.tfstate file is in the repo (as required) but I excluded the backu
 To check if everything works:
 
 1. Run `vagrant up`
-2. Go to http://192.168.56.10:3000
+2. Go to http://localhost:3000
 3. Add a product with name, price, etc
 4. Run `vagrant reload` to restart everything
 5. Check if the product is still there

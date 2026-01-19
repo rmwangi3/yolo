@@ -42,7 +42,7 @@ Add a product through the UI, then restart with `vagrant reload` to check if it 
 
 Or use the API:
 ```bash command
-curl http://192.168.56.10:5000/api/products
+curl http://localhost:5000/api/products
 ```
 
 ## Troubleshooting
