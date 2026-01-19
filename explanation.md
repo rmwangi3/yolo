@@ -1,64 +1,81 @@
-# Implementation Notes
+# Explanation
 
-## Docker Setup
+## Playbook Execution Order
 
-I used these base images:
-- Backend: `node:16-alpine` - keeps it lightweight
-- Client: Multi-stage build with `node:16-alpine` for building, then `nginx:stable-alpine` for serving
-- Database: `mongo:5.0` - standard MongoDB image
-
-The Dockerfiles follow some common patterns - copy package files first (for better caching), install dependencies, then copy source code. For the client, I'm doing a multi-stage build which makes the final image much smaller since it only includes the built files and nginx.
-
-For networking, everything runs on a custom bridge network called `yolo-network`. This lets containers talk to each other by name. The backend connects to MongoDB using `mongodb://mongo:27017/yolomy` - simple as that.
-
-Persistence is handled with a named volume for MongoDB data. Images are tagged properly: `rmwangi3/yolo-backend:1.0.0`.
-
-## Ansible Playbook
-
-The playbook runs through these roles in order:
-
-1. **docker** - Installs Docker, Docker Compose, and the Python Docker library. Uses standard Ansible modules like `apt_key`, `apt_repository`, and `service`.
-
-2. **clone_repo** - Clones the repo from GitHub into `/opt/yolo`. Also copies over the `.env` file with the MongoDB connection string.
-
-3. **mongodb** - Sets up the database container. Creates the network and volume first, then pulls the image and runs the container.
-
-4. **backend** - Builds the backend image from the Dockerfile, then deploys it. Waits for port 5000 to be available and tests the API endpoint.
-
-5. **client** - Same thing for the frontend - build, deploy, wait, test. This one's on port 3000.
-
-I'm using variables in `vars/main.yml` for configuration stuff - repo URL, container names, ports, etc. Makes it easy to change things without editing multiple files.
-
-Tags let you run specific parts: `ansible-playbook playbook.yml --tags docker` just installs Docker, or `--skip-tags setup` skips the initial setup tasks.
-
-The whole thing is idempotent so you can run it multiple times safely.
-
-## Terraform (Stage 2)
-
-Added Terraform integration in the `Stage_two` directory. It uses a `null_resource` to run Vagrant commands via `local-exec`. Not the most elegant solution but it works for this use case.
-
-The playbook in Stage_two runs terraform init and apply, then calls the regular Ansible roles.
-
-Run it with:
-```bash
-cd Stage_two
-ansible-playbook playbook.yml -i ../inventory
+```
+pre_tasks → docker → clone_repo → mongodb → backend → client → post_tasks
 ```
 
-## Vagrant
+## Why This Order?
 
-Using the `geerlingguy/ubuntu2004` box because it's well-maintained. Port forwarding maps 3000→3001 and 5000→5001 on the host. The VM gets a private IP at 192.168.56.10.
+Each role depends on the ones before it. Breaking this order causes failures.
 
-Vagrant runs the Ansible playbook automatically on `vagrant up`.
+### 1. Pre-tasks
+Updates apt and installs git, curl, python3-pip.
+- **Modules**: `apt`
+
+### 2. Docker Role
+Installs Docker first since everything runs in containers.
+- **What it does**: Installs Docker Engine, Docker Compose, Python Docker SDK
+- **Modules**: `apt_key`, `apt_repository`, `apt`, `service`, `user`, `pip`, `docker_container`
+- **Tags**: docker, setup
+
+### 3. Clone Repo Role
+Clones the code from GitHub. Needed before building images.
+- **What it does**: Creates `/opt/yolo` directory, clones repo, creates .env file
+- **Modules**: `file`, `git`, `copy`
+- **Tags**: clone, setup
+
+### 4. MongoDB Role
+Database must run before backend tries to connect.
+- **What it does**: Creates Docker network and volume, pulls MongoDB image, starts container
+- **Modules**: `docker_network`, `docker_volume`, `docker_image`, `docker_container`, `wait_for`
+- **Tags**: mongodb, containers
+
+### 5. Backend Role
+API must run before frontend makes requests.
+- **What it does**: Builds backend image, starts container on port 5000, connects to MongoDB
+- **Modules**: `docker_image`, `docker_container`, `wait_for`
+- **Tags**: backend, containers
+
+### 6. Client Role
+Frontend goes last since nothing depends on it.
+- **What it does**: Builds React app, starts nginx container on port 3000
+- **Modules**: `docker_image`, `docker_container`, `wait_for`
+- **Tags**: client, containers
+
+### 7. Post-tasks
+Shows URLs to access the app.
+
+## Variables
+
+Used `vars/main.yml` to store configuration like ports, container names, and MongoDB URI. Makes it easy to change settings in one place.
+
+## Blocks and Tags
+
+- **Blocks**: Groups related tasks (e.g., Docker installation steps)
+- **Tags**: Run specific parts of playbook
+  - `--tags setup` - just install Docker and clone repo
+  - `--tags containers` - only deploy containers
+  - `--skip-tags mongodb` - skip database
+
+## Stage 2 - Terraform
+
+Added Terraform in `Stage_two/` to automate VM provisioning. Terraform runs `vagrant up` via local-exec provisioner, which triggers the Ansible playbook.
+
+Run with: `cd Stage_two && ansible-playbook playbook.yml -i ../inventory`
 
 ## Testing
 
-The playbook includes some basic tests - checks if containers are running, hits the API endpoints, etc. 
+1. `vagrant up`
+2. Visit http://192.168.56.10:3000
+3. Add a product
+4. `vagrant reload`
+5. Verify product persists (saved in MongoDB volume)
 
-For manual testing:
-1. Go to http://192.168.56.10:3000
-2. Add a product (name, price, description)
-3. Run `vagrant reload` to restart everything
-4. Check if the product is still there
+## Why Order Matters
 
-That's about it.
+- No Docker → can't run containers
+- No repo → can't build images
+- No MongoDB → backend crashes
+- No backend → frontend shows errors

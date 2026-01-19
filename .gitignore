@@ -31,6 +31,10 @@ ansible.log
 *.retry
 /tmp/ansible_facts/
 
+# Terraform
+*.tfstate.backup
+.terraform/
+
 # Backups
 yolo_backup/
 *~

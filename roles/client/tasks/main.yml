@@ -20,18 +20,16 @@
     state: started
     restart_policy: unless-stopped
     networks:
-          - name: "{{ docker_network_name }}"
-        ports:
-          - "{{ client_port }}:{{ client_nginx_port }}"
-      tags:
-        - client-deploy
-    
-    - name: Wait for client to be ready
-      wait_for:
-        port: "{{ client_port }}"
-        delay: 5
-        timeout: 60
-      tags:
-        - client-wait
+      - name: "{{ docker_network_name }}"
+    ports:
+      - "{{ client_port }}:80"
   tags:
-    - client-deployment
+    - client-deploy
+
+- name: Wait for client to be ready
+  wait_for:
+    port: "{{ client_port }}"
+    delay: 5
+    timeout: 60
+  tags:
+    - client-wait

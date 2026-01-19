@@ -20,23 +20,21 @@
     state: started
     restart_policy: unless-stopped
     networks:
-          - name: "{{ docker_network_name }}"
-        ports:
-          - "{{ backend_port }}:{{ backend_port }}"
-        env:
-          MONGODB_URI: "{{ mongodb_uri }}"
-          PORT: "{{ backend_port | string }}"
-        volumes:
-          - "{{ image_upload_path }}:/usr/src/app/public/images"
-      tags:
-        - backend-deploy
-    
-    - name: Wait for backend to be ready
-      wait_for:
-        port: "{{ backend_port }}"
-        delay: 10
-        timeout: 60
-      tags:
-        - backend-wait
+      - name: "{{ docker_network_name }}"
+    ports:
+      - "{{ backend_port }}:{{ backend_port }}"
+    env:
+      MONGODB_URI: "{{ mongodb_uri }}"
+      PORT: "{{ backend_port | string }}"
+    volumes:
+      - "{{ image_upload_path }}:/usr/src/app/public/images"
   tags:
-    - backend-deployment
+    - backend-deploy
+
+- name: Wait for backend to be ready
+  wait_for:
+    port: "{{ backend_port }}"
+    delay: 10
+    timeout: 60
+  tags:
+    - backend-wait
