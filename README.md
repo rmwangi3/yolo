@@ -49,7 +49,7 @@ curl http://192.168.56.10:5000/api/products
 
 **VM won't start?**
 ```bash command
- vagrant destroy -f
+vagrant destroy -f
 vagrant up
 ```
 

@@ -17,55 +17,55 @@ Each role depends on the ones before it. If I change the order, stuff breaks. Le
 ## What Each Role Does
 
 ### 1. Pre-tasks
-First, I update apt and install some basic packages (git, curl, python3-pip). Everything else needs these.
+First thing I do is update apt and install git, curl, python3-pip. Can't do anything without these.
 - **Modules**: `apt`
 
 ### 2. Docker Role
-This has to run first. Without Docker, I can't run any containers, so everything fails.
-- Installs Docker Engine and Docker Compose
-- Starts the Docker service
-- Installs Python Docker library (Ansible needs this to run docker commands)
+This goes first obviously. No Docker = no containers = nothing works.
+- Install Docker Engine and Docker Compose
+- Start Docker daemon
+- Install Python Docker library (Ansible uses this to manage containers)
 - **Modules**: `apt_key`, `apt_repository`, `apt`, `service`, `user`, `get_url`, `pip`, `docker_container`
 - **Tags**: docker, setup
 
 ### 3. Clone Repo Role
-I need to clone the code from GitHub before I can build anything. Can't build a Docker image without the Dockerfile and source code.
-- Creates /opt/yolo directory
-- Clones the repo from GitHub
-- Creates .env file with the MongoDB connection string
-- Sets up a directory for product images to be uploaded
+Gotta get the code from GitHub first. I need the Dockerfiles and everything before I can build anything.
+- Create /opt/yolo directory
+- Clone the repo
+- Make the .env file with MongoDB settings
+- Set up folder for product images
 - **Modules**: `file`, `git`, `copy`, `debug`
 - **Tags**: clone, setup
 
 ### 4. MongoDB Role
-The database has to be running before the backend starts. If the backend runs first, it can't connect and crashes.
-- Creates a Docker network (yolo-network) so containers can communicate with each other
-- Creates a volume (mongo-data) to keep database data even after container restarts
-- Pulls the MongoDB image
-- Runs the MongoDB container
-- Waits for it to fully start up
+Database has to be up before backend tries to connect or it breaks immediately.
+- Create Docker network (yolo-network) so containers can talk to each other
+- Create volume (mongo-data) to save database stuff even after container dies
+- Pull MongoDB image
+- Start MongoDB container
+- Wait for it to actually be ready
 - **Modules**: `docker_network`, `docker_volume`, `docker_image`, `docker_container`, `wait_for`, `docker_container_info`, `debug`
 - **Tags**: mongodb, containers
 
 ### 5. Backend Role
-The API needs to run before the frontend. The client can't talk to the backend if it's not there.
-- Builds the backend Docker image from the Dockerfile
-- Stops any old backend container that's running
-- Starts a new backend container on port 5000
-- Connects it to yolo-network
-- Sets environment variables (MONGODB_URI, PORT)
-- Mounts the volume for product images
-- Waits for the API to actually be listening
+Backend needs to run before the frontend so they can actually talk to each other.
+- Build backend Docker image
+- Kill old backend container if it's running
+- Start new backend on port 5000
+- Connect to yolo-network
+- Set environment variables (MONGODB_URI, PORT)
+- Mount the images volume
+- Check that port 5000 is listening
 - **Modules**: `docker_image`, `docker_container`, `wait_for`
 - **Tags**: backend, containers
 
 ### 6. Client Role
-The frontend goes last. Nothing depends on it being there, so I can put it at the end without breaking anything.
-- Builds the React app using a multi-stage build (smaller image size)
-- Stops any old client container
-- Starts a new client container on port 3000 with nginx
-- Connects it to yolo-network
-- Waits for nginx to be ready
+Frontend is last because nothing else depends on it. Can put it anywhere really.
+- Build React frontend with multi-stage Dockerfile (saves space)
+- Stop old client container
+- Start new client on port 3000 with nginx
+- Connect to yolo-network
+- Wait for nginx to be ready
 - **Modules**: `docker_image`, `docker_container`, `wait_for`
 - **Tags**: client, containers
 

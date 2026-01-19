@@ -36,5 +36,5 @@ terraform destroy  # when done
 ```
 
 ## Access
-Frontend: http://192.168.56.10:3000
-Backend API: http://192.168.56.10:5000/api/products
+Frontend: http://localhost:3000
+Backend API: http://localhost:5000/api/products
