@@ -15,13 +15,13 @@
       command: terraform apply -auto-approve
       args:
         chdir: terraform
-      register: tf_apply
+      register: tf apply
 
     - name: Display Terraform output
       command: terraform output -json
       args:
         chdir: terraform
-      register: tf_output
+      register: tf output
 
     - name: Show deployment info
       debug:
