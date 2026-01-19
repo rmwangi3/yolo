@@ -1,49 +1,40 @@
-# Stage 2: Terraform + Ansible Integration
+# Stage 2: Terraform + Ansible
 
-## Overview
-This stage combines Terraform for infrastructure provisioning with Ansible for configuration management.
+I used Terraform to provision stuff and Ansible to configure it all.
 
-## Structure
 ```
 Stage_two/
-├── terraform/          # Terraform Integrations
-│   ├── main.tf        # Main Terraform config
-│   └── variables.tf   # Variable definitions
-├── playbook.yml       # Integrated playbook
-└── README.md          # This file
+├── terraform/          # Terraform files
+│   ├── main.tf        # Main config
+│   └── variables.tf   # Variables
+├── playbook.yml       # The playbook
+└── README.md          # Read me
 ```
 
-## Usage
+## How to Run It
 
-### One-Command Deployment
+Just do this:
 ```bash
 cd Stage_two
 ansible-playbook playbook.yml -i ../inventory
 ```
 
-From this, we expect that:
-1. Terraform will be initialized
-2. Provisioned infrastructure (Vagrant VM)
-3. The VM with Ansible will be configured
-4. All containers will be deployed
+What happens:
+1. Terraform initializes
+2. Vagrant VM gets created
+3. Ansible configures everything
+4. All containers start up
 
-### Manual Terraform Operations
+Or run Terraform manually:
 ```bash
 cd Stage_two/terraform
 
-# Initialize
 terraform init
-
-# Plan
 terraform plan
-
-# Apply
 terraform apply
-
-# Destroy
-terraform destroy
+terraform destroy  # when done
 ```
 
 ## Access
-- Frontend: http://192.168.56.10:3000
-- Backend: http://192.168.56.10:5000/api/products
+Frontend: http://192.168.56.10:3000
+Backend API: http://192.168.56.10:5000/api/products
