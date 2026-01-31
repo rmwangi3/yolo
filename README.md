@@ -1,217 +1,93 @@
-# Yolo E-commerce App
+cd ~/week4/projects/yolo
 
-Built this e-commerce app for my DevOps class. Started with Docker/Ansible, then added Terraform automation, and finally got it running on Kubernetes.
+# Backup existing README if needed
+cp README.md README.md.backup 2>/dev/null || true
 
-## Quick Start
+# Create the new README
+cat > README.md << 'EOF'
+# Yolo E-Commerce Application - Kubernetes Deployment
 
-```bash: run command
-vagrant up
-```
+## 🌐 Live Application
 
-Access at http://192.168.56.10:3000
+**URL:** http://34.121.63.230
 
-## Stage 2 (Terraform Integration)
+The application is deployed on Google Kubernetes Engine (GKE) and is fully functional.
 
-```bash: run command
-cd Stage_two
-ansible-playbook playbook.yml -i ../inventory
-```
+---
 
-## If VirtualBox Doesn't Work
+## 📋 Project Overview
 
-Sometimes VirtualBox has issues. Use Docker Compose instead:
+This is a full-stack e-commerce application deployed on Kubernetes with:
+- **Frontend:** React application
+- **Backend:** Node.js/Express API
+- **Database:** MongoDB with persistent storage
 
-```bash: run command
-docker compose up -d
-```
+---
 
-Then go to http://localhost:3000
+## 🚀 Quick Start
 
-## What's Inside
+### Access the Live Application
+Visit: **http://34.121.63.230**
 
-- `Vagrantfile` - VM setup
-- `playbook.yml` - Main Ansible playbook  
-- `roles/` - Ansible roles (docker, mongodb, backend, client)
-- `vars/main.yml` - Configuration variables
-- `docker-compose.yml` - Docker setup
-- `explanation.md` - Implementation details
+### API Endpoints
+- `GET /api/products` - Get all products
+- `POST /api/products` - Create a product
+- `PUT /api/products/:id` - Update a product
+- `DELETE /api/products/:id` - Delete a product
 
-## Testing
+---
 
-Add a product through the UI, then restart with `vagrant reload` to check if it persists.
+## 🏗️ Architecture
 
-Or use the API:
-```bash command
-curl http://localhost:5000/api/products
-```
+### Kubernetes Objects Used
 
-## Troubleshooting
+1. **StatefulSet (MongoDB)**
+   - Provides stable network identity
+   - Persistent storage with 5Gi PVC
+   - Ensures data persistence across restarts
 
-**VM won't start?**
-```bash command
-vagrant destroy -f
-vagrant up
-```
+2. **Deployments (Frontend & Backend)**
+   - Frontend: 2 replicas with LoadBalancer
+   - Backend: 2 replicas with ClusterIP (internal)
 
-**Can't connect?**
-```bash command
-vagrant ssh
-docker ps
-```
+3. **Services**
+   - LoadBalancer: Exposes frontend to internet
+   - ClusterIP: Internal backend service
+   - Headless: MongoDB StatefulSet service
 
-**Backend issues?**
-```bash command
-vagrant ssh
-docker logs yolo-backend
-```
+4. **PersistentVolumeClaim**
+   - 5Gi storage for MongoDB
+   - StorageClass: standard-rwo
+   - Survives pod restarts/deletions
 
-## Docker Images
+---
 
-My images are on Docker Hub:
-- Backend: `rmwangi3/yolo-backend:1.0.0`
-- Client: `rmwangi3/yolo-client:1.0.0`
+## 📦 Deployment
 
-## Kubernetes Deployment
+### Prerequisites
+- Google Cloud account with $300 free credits
+- `gcloud` CLI installed
+- `kubectl` installed
+- Docker images on Docker Hub:
+  - `rmwangi3/yolo-backend:1.0.0`
+  - `rmwangi3/yolo-frontend:1.0.0`
 
-Got the app running on Kubernetes now. All the manifests are in `Stage_two/k8s/`. Currently testing on Minikube but should work on GKE, its pretty straightforward.
+### Deploy to GKE
 
-To deploy on GKE:
 ```bash
-gcloud container clusters get-credentials <CLUSTER_NAME> --zone <ZONE> --project <PROJECT_ID>
-cd Stage_two
-./deploy.sh
-kubectl -n yolo get svc frontend  # grab the external IP
-```
+# 1. Create GKE cluster
+gcloud container clusters create yolo-cluster \
+  --zone us-central1-a \
+  --num-nodes 2 \
+  --machine-type e2-small \
+  --disk-size 20
 
-Using my Docker Hub images but you can swap them out in  deployment yamls if needed.
+# 2. Get credentials
+gcloud container clusters get-credentials yolo-cluster --zone us-central1-a
 
-## Access the App
-
-Running at: **http://192.168.49.2:32349**
-
-(That's the Minikube IP - yours might be different)
-
-Get your URL:
-```bash
-minikube service frontend -n yolo --url
-```
-
-Prefer localhost? Port-forward it:
-```bash
-kubectl -n yolo port-forward svc/frontend 3000:80
-# then go to localhost:3000
-```
-**Can't connect?**
-```bash command
-vagrant ssh
-docker ps
-```
-
-**Backend issues?**
-```bash command
-vagrant ssh
-docker logs yolo-backend
-```
-
-## Docker Images
-
-My images are on Docker Hub:
-- Backend: `rmwangi3/yolo-backend:1.0.0`
-- Client: `rmwangi3/yolo-client:1.0.0`
-
-## Kubernetes Deployment
-
-Got the app running on Kubernetes now. All the manifests are in `Stage_two/k8s/`. Currently testing on Minikube but should work on GKE, its pretty straightforward.
-
-To deploy on GKE:
-```bash
-gcloud container clusters get-credentials <CLUSTER_NAME> --zone <ZONE> --project <PROJECT_ID>
+# 3. Deploy application
 cd Stage_two
 ./deploy.sh
-kubectl -n yolo get svc frontend  # grab the external IP
-```
 
-Using my Docker Hub images but you can swap them out in  deployment yamls if needed.
-
-## Access the App
-
-Running at: **http://192.168.49.2:32349**
-
-(That's the Minikube IP - yours might be different)
-**Can't connect?**
-```bash command
-vagrant ssh
-docker ps
-```
-
-**Backend issues?**
-```bash command
-vagrant ssh
-docker logs yolo-backend
-```
-
-## Docker Images
-
-My images are on Docker Hub:
-- Backend: `rmwangi3/yolo-backend:1.0.0`
-- Client: `rmwangi3/yolo-client:1.0.0`
-
-## Kubernetes Deployment
-
-Got the app running on Kubernetes now. All the manifests are in `Stage_two/k8s/`. Currently testing on Minikube but should work on GKE, its pretty straightforward.
-
-To deploy on GKE:
-```bash
-gcloud container clusters get-credentials <CLUSTER_NAME> --zone <ZONE> --project <PROJECT_ID>
-cd Stage_two
-./deploy.sh
-kubectl -n yolo get svc frontend  # grab the external IP
-```
-
-Using my Docker Hub images but you can swap them out in  deployment yamls if needed.
-
-## Access the App
-
-Running at: **http://192.168.49.2:32349**
-
-(That's the Minikube IP - yours might be different)
-
-Get your URL:
-```bash
-minikube service frontend -n yolo --url
-```
-
-Prefer localhost? Port-forward it:
-```bash
-kubectl -n yolo port-forward svc/frontend 3000:80
-# then go to localhost:3000
-```
-
-
-Get your URL:
-```bash
-minikube service frontend -n yolo --url
-```
-
-Prefer localhost? Port-forward it:
-```bash
-kubectl -n yolo port-forward svc/frontend 3000:80
-# then go to localhost:3000
-```
-
-## 🚀 Live Deployment on GKE
-
-**Application URL:** http://34.121.63.230
-
-### Deployment Details
-- **Platform:** Google Kubernetes Engine (GKE)
-- **Cluster:** yolo-cluster
-- **Region:** us-central1-a
-- **Nodes:** 2 x e2-small
-- **Services:**
-  - Frontend: LoadBalancer (port 80)
-  - Backend: ClusterIP (port 5000)
-  - MongoDB: StatefulSet with persistent storage
-
-### Access the Application
-Visit http://34.121.63.230 to interact with the Yolo e-commerce platform.
+# 4. Verify deployment
+kubectl -n yolo get all
