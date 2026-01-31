@@ -1,6 +1,6 @@
-# Yolo E-commerce Deployment
+# Yolo E-commerce App
 
-e-commerce app deployed with Ansible and Terraform.
+Built this e-commerce app for my DevOps class. Started with Docker/Ansible, then added Terraform automation, and finally got it running on Kubernetes.
 
 ## Quick Start
 
@@ -65,14 +65,39 @@ vagrant ssh
 docker logs yolo-backend
 ```
 
-## DockerHub Images
+## Docker Images
 
-Backend: `rmwangi3/yolo-backend:1.0.0`  
-Client: `rmwangi3/yolo-client:1.0.0`
+My images are on Docker Hub:
+- Backend: `rmwangi3/yolo-backend:1.0.0`
+- Client: `rmwangi3/yolo-client:1.0.0`
 
-Push them with:
-```bash: run command
-docker login
-docker push rmwangi3/yolo-backend:1.0.0
-docker push rmwangi3/yolo-client:1.0.0
+## Kubernetes Deployment
+
+Got the app running on Kubernetes now. All the manifests are in `Stage_two/k8s/`. Currently testing on Minikube but should work on GKE, its pretty straightforward.
+
+To deploy on GKE:
+```bash
+gcloud container clusters get-credentials <CLUSTER_NAME> --zone <ZONE> --project <PROJECT_ID>
+cd Stage_two
+./deploy.sh
+kubectl -n yolo get svc frontend  # grab the external IP
+```
+
+Using my Docker Hub images but you can swap them out in  deployment yamls if needed.
+
+## Access the App
+
+Running at: **http://192.168.49.2:32349**
+
+(That's the Minikube IP - yours might be different)
+
+Get your URL:
+```bash
+minikube service frontend -n yolo --url
+```
+
+Prefer localhost? Port-forward it:
+```bash
+kubectl -n yolo port-forward svc/frontend 3000:80
+# then go to localhost:3000
 ```

@@ -1,56 +1,28 @@
-Stage Two — Kubernetes Manifests
+# Kubernetes Manifests
 
-This folder contains Kubernetes manifests for deploying the `yolo` app to a GKE cluster.
+Manifests for deploying to GKE/Minikube.
 
-Files:
-- `namespace.yaml` — creates `yolo` namespace
-- `mongo-headless-service.yaml` — headless service for StatefulSet
-- `mongo-statefulset.yaml` — MongoDB StatefulSet with `volumeClaimTemplates`
-- `backend-deployment.yaml` + `backend-service.yaml` — backend Deployment and Service
-- `frontend-deployment.yaml` + `frontend-service.yaml` — frontend Deployment and Service (LoadBalancer)
-- `ingress.yaml` — optional Ingress (GCE) to route traffic to the frontend
+**What's in here:**
+- `namespace.yaml` - yolo namespace
+- `mongo-statefulset.yaml` + `mongo-headless-service.yaml` - MongoDB with persistent storage
+- `backend-deployment.yaml` + `backend-service.yaml` - backend API
+- `frontend-deployment.yaml` + `frontend-service.yaml` - frontend (LoadBalancer)
+- `ingress.yaml` - optional Ingress
 
-Before applying:
-1. Build and push your Docker images to Docker Hub with immutable tags, e.g. `dockerhub-username/backend:v1.0.0` and `dockerhub-username/client:v1.0.0`.
-2. Edit `backend-deployment.yaml` and `frontend-deployment.yaml` and replace `YOUR_DOCKERHUB_USERNAME/<service>:latest` with your pushed image tags.
-
-Deploy (example):
-
+**Deploy:**
 ```bash
 kubectl apply -f namespace.yaml
-kubectl apply -n yolo -f mongo-headless-service.yaml
-kubectl apply -n yolo -f mongo-statefulset.yaml
+kubectl apply -n yolo -f mongo-headless-service.yaml -f mongo-statefulset.yaml
 kubectl apply -n yolo -f backend-deployment.yaml -f backend-service.yaml
 kubectl apply -n yolo -f frontend-deployment.yaml -f frontend-service.yaml
-# Optional: kubectl apply -n yolo -f ingress.yaml
-
-Optional: enable a 3-node MongoDB replica set (extra credit)
-
-1. Apply the 3-node StatefulSet:
-
-```bash
-kubectl apply -n yolo -f mongo-statefulset-replicaset.yaml
 ```
 
-2. Apply the init Job to form the replica set:
+Or just run `../deploy.sh` from the repo root, its easier.
 
-```bash
-kubectl apply -n yolo -f mongo-init-job.yaml
-kubectl -n yolo logs job/mongo-init-replicaset
-```
-
-Notes:
-- The `mongo-statefulset-replicaset.yaml` will create three PVCs (one per pod). On GKE these will be dynamically provisioned.
-- Keep the original single-node `mongo-statefulset.yaml` for simple local testing; deploy only one of the two StatefulSets at a time to avoid conflicts.
-```
-
-Check rollout status and get the external IP for the frontend service:
-
+**Check status:**
 ```bash
 kubectl -n yolo get pods
 kubectl -n yolo get svc frontend
 ```
 
-Notes:
-- The `StatefulSet` uses `volumeClaimTemplates` which on GKE will dynamically provision PersistentVolumes.
-- For production, use stable image tags and consider setting resource requests/limits and readiness/liveness probes.
+Images are already set to `rmwangi3/yolo-backend:1.0.0` and `rmwangi3/yolo-client:1.0.0`. Change them if using your own.

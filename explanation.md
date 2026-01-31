@@ -113,3 +113,29 @@ The product should stay because MongoDB data is saved in a volume that doesn't g
 - No backend → frontend has nothing to connect to
 
 That's why I had to order it this way.
+
+## Week 5 — Kubernetes Deployment
+
+Here's what I did for the Kubernetes setup.
+
+**Objects I used:**
+- Namespace (keeps everything organized)
+- StatefulSet for MongoDB - needed this for persistent storage
+- Regular Deployments for backend/frontend
+- LoadBalancer Service for external access
+- Threw in an Ingress example but haven't actually tested it
+
+**Why StatefulSet:**
+Needed StatefulSet for Mongo because it handles persistent storage properly. Each pod gets it's own volume and keeps the same identity if it restarts. Used volumeClaimTemplates so PVCs get created automatically.
+
+**External Access:**
+Went with LoadBalancer type Service. On GKE this gets you an external IP. For local testing with Minikube it's just a NodePort but works fine. Also included an Ingress manifest if you want to try that.
+
+**Storage:**
+Mongo StatefulSet creates PVCs from the volumeClaimTemplates. Set it to 5Gi per pod. On GKE these automatically provision PersistentVolumes.
+
+**Git stuff:**
+Worked on a k8s-deploy branch, then merged to main when everything was working. Tagged my images with v1.0.0 - way easier to track than using latest tags.
+
+**Deploy & Debug:**
+Just run `./deploy.sh` and it applies everything. When things break (they always do) I start with `kubectl get pods` then check logs. Added liveness/readiness probes so K8s actually knows when stuff is ready

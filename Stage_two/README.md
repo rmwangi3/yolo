@@ -36,5 +36,18 @@ terraform destroy  # when done
 ```
 
 ## Access
-Frontend: http://localhost:3000
-Backend API: http://localhost:5000/api/products
+
+**Kubernetes (Minikube) Deployment:**
+- Frontend: http://localhost:3000
+
+Set up port forwarding:
+```bash
+kubectl -n yolo port-forward svc/frontend 3000:80
+```
+
+**Alternative (direct Minikube IP):**
+- Get URL: `minikube service frontend -n yolo --url`
+
+**Legacy (Vagrant/Docker Compose):**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000/api/products
