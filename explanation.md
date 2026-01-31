@@ -139,3 +139,321 @@ Worked on a k8s-deploy branch, then merged to main when everything was working. 
 
 **Deploy & Debug:**
 Just run `./deploy.sh` and it applies everything. When things break (they always do) I start with `kubectl get pods` then check logs. Added liveness/readiness probes so K8s actually knows when stuff is ready
+
+# Kubernetes Deployment Explanation
+
+## Architecture Overview
+
+This application is deployed on Google Kubernetes Engine (GKE) using a microservices architecture with the following components:
+
+### Components
+
+1. **Frontend (React Application)**
+   - Deployment with 2 replicas
+   - Exposed via LoadBalancer service
+   - Public IP: 34.121.63.230
+   - Port: 80
+
+2. **Backend (Node.js/Express API)**
+   - Deployment with 2 replicas
+   - Internal ClusterIP service
+   - Port: 5000
+   - Connected to MongoDB
+
+3. **Database (MongoDB)**
+   - StatefulSet with 1 replica
+   - Persistent storage via PVC (5Gi)
+   - Headless service for stable network identity
+
+---
+
+## Deployment Process
+
+### 1. GKE Cluster Creation
+
+```bash
+gcloud container clusters create yolo-cluster \
+  --zone us-central1-a \
+  --num-nodes 2 \
+  --machine-type e2-small \
+  --disk-size 20
+```
+
+**Why these settings?**
+- **2 nodes:** Provides redundancy and distributes workload
+- **e2-small:** Cost-effective for development/testing
+- **20GB disk:** Minimum required for GKE images
+
+### 2. Kubernetes Resources
+
+**Namespace:**
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: yolo
+```
+
+**MongoDB StatefulSet:**
+- Uses StatefulSet for stable pod identity
+- PersistentVolumeClaim for data persistence
+- Headless service for direct pod access
+
+**Backend Deployment:**
+- 2 replicas for high availability
+- TCP readiness probe (port 5000)
+- Environment variables for configuration
+- Resource limits: 500m CPU, 512Mi memory
+
+**Frontend Deployment:**
+- 2 replicas for redundancy
+- LoadBalancer service type for external access
+- Serves static React build
+
+---
+
+## Network Architecture
+
+```
+Internet
+   ↓
+LoadBalancer (34.121.63.230:80)
+   ↓
+Frontend Pods (2 replicas)
+   ↓
+Backend Service (ClusterIP)
+   ↓
+Backend Pods (2 replicas)
+   ↓
+MongoDB Headless Service
+   ↓
+MongoDB StatefulSet (mongo-0)
+   ↓
+PersistentVolume (5Gi)
+```
+
+---
+
+## Key Kubernetes Concepts Used
+
+### 1. Deployments
+- **Frontend & Backend:** Stateless applications
+- Rolling updates for zero-downtime deployments
+- Replica management for scaling
+
+### 2. StatefulSet
+- **MongoDB:** Requires stable network identity and persistent storage
+- Ordered pod creation and deletion
+- Persistent volumes bound to specific pods
+
+### 3. Services
+
+**LoadBalancer (Frontend):**
+```yaml
+type: LoadBalancer
+```
+- Provisions external IP from cloud provider
+- Routes external traffic to frontend pods
+
+**ClusterIP (Backend):**
+```yaml
+type: ClusterIP
+```
+- Internal-only service
+- Not exposed to internet
+- Accessed by frontend within cluster
+
+**Headless (MongoDB):**
+```yaml
+clusterIP: None
+```
+- Direct pod-to-pod communication
+- DNS returns pod IPs directly
+- Required for StatefulSet
+
+### 4. PersistentVolumeClaim
+```yaml
+storageClassName: standard-rwo
+accessModes:
+  - ReadWriteOnce
+```
+- Dynamically provisioned storage
+- Data persists across pod restarts
+- Bound to specific node (ReadWriteOnce)
+
+### 5. Probes
+
+**Liveness Probe:**
+- Checks if container is alive
+- Restarts unhealthy containers
+
+**Readiness Probe:**
+- Checks if pod is ready to serve traffic
+- Removes unready pods from service endpoints
+
+---
+
+## Deployment Commands
+
+```bash
+# Create namespace
+kubectl apply -f namespace.yaml
+
+# Deploy MongoDB
+kubectl apply -f mongo-statefulset.yaml
+
+# Deploy Backend
+kubectl apply -f backend-deployment.yaml
+
+# Deploy Frontend
+kubectl apply -f frontend-deployment.yaml
+
+# Verify deployment
+kubectl -n yolo get all
+```
+
+---
+
+## Troubleshooting
+
+### Issue: Backend Readiness Probe Failing
+
+**Problem:** HTTP GET to `/` returned 404
+
+**Solution:** Changed readiness probe from HTTP to TCP:
+```yaml
+readinessProbe:
+  tcpSocket:
+    port: 5000
+  initialDelaySeconds: 10
+  periodSeconds: 10
+```
+
+### Issue: Disk Size Too Small
+
+**Problem:** GKE image requires minimum 12GB
+
+**Solution:** Increased disk size from 10GB to 20GB
+
+---
+
+## Resource Management
+
+### Backend Pod Resources
+```yaml
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+```
+
+**Requests:** Guaranteed resources
+**Limits:** Maximum resources allowed
+
+---
+
+## Scaling
+
+### Manual Scaling
+```bash
+# Scale backend
+kubectl -n yolo scale deployment backend --replicas=3
+
+# Scale frontend
+kubectl -n yolo scale deployment frontend --replicas=3
+```
+
+### Auto-scaling (Optional)
+```bash
+kubectl -n yolo autoscale deployment backend \
+  --cpu-percent=50 \
+  --min=2 \
+  --max=10
+```
+
+---
+
+## Monitoring
+
+### Check Pod Status
+```bash
+kubectl -n yolo get pods
+```
+
+### View Logs
+```bash
+kubectl -n yolo logs -f deployment/backend
+kubectl -n yolo logs -f deployment/frontend
+kubectl -n yolo logs -f mongo-0
+```
+
+### Check Services
+```bash
+kubectl -n yolo get svc
+```
+
+---
+
+## Cost Optimization
+
+### Current Setup
+- 2 x e2-small nodes: ~$25/month
+- 20GB persistent disk: ~$0.80/month
+- LoadBalancer: ~$18/month
+- **Total:** ~$44/month
+
+### Covered by $300 Free Credits ✅
+
+---
+
+## Security Considerations
+
+1. **Backend not exposed:** Only ClusterIP, internal access only
+2. **MongoDB not exposed:** Headless service, no external access
+3. **Frontend only public service:** LoadBalancer with public IP
+4. **Resource limits:** Prevents resource exhaustion
+5. **Network policies:** Can be added for additional isolation
+
+---
+
+## High Availability
+
+1. **Multiple replicas:** Frontend and backend have 2 replicas each
+2. **Pod anti-affinity:** Kubernetes distributes pods across nodes
+3. **Readiness probes:** Only healthy pods receive traffic
+4. **Persistent storage:** Data survives pod restarts
+
+---
+
+## CI/CD Integration (Future)
+
+```yaml
+# Example GitHub Actions workflow
+- name: Build and push Docker image
+  run: |
+    docker build -t rmwangi3/yolo-backend:${{ github.sha }} .
+    docker push rmwangi3/yolo-backend:${{ github.sha }}
+
+- name: Deploy to GKE
+  run: |
+    kubectl set image deployment/backend \
+      backend=rmwangi3/yolo-backend:${{ github.sha }} \
+      -n yolo
+```
+
+---
+
+## Conclusion
+
+This deployment demonstrates:
+- �� Containerized microservices architecture
+- ✅ Kubernetes orchestration on GKE
+- ✅ Persistent storage for stateful applications
+- ✅ Load balancing and high availability
+- ✅ Resource management and optimization
+- ✅ Production-ready cloud deployment
+
+**Live URL:** http://34.121.63.230
