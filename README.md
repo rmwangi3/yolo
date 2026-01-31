@@ -15,7 +15,7 @@ Deployed on GKE with React frontend, Node.js backend, and MongoDB.
 
 **Images:**
 - `rmwangi3/yolo-backend:1.0.0`
-- `rmwangi3/yolo-frontend:1.0.0`
+- `rmwangi3/yolo-client:1.0.0`
 
 ## Deploy to GKE
 

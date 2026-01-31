@@ -1,140 +1,175 @@
-# Kubernetes Deployment Explanation
+# Yolo E-Commerce Deployment Explanation
 
-## Architecture Overview
+Built this e-commerce app through different stages - started with local VMs and ended up deploying to Google Cloud.
 
-Deployed a full-stack e-commerce app on GKE using Kubernetes orchestration.
+---
 
-**Stack:**
-- Frontend: React (nginx)
+## Week 5: Kubernetes on GKE
+
+### What I Built
+
+Deployed the full-stack app on GKE with Kubernetes.
+
+**Tech Stack:**
+- Frontend: React with nginx
 - Backend: Node.js/Express
 - Database: MongoDB
 
 **Live URL:** http://34.121.63.230
 
-## Kubernetes Objects Used
+### Kubernetes Objects I Used
 
-### 1. Namespace
-Created `yolo` namespace to isolate resources and keep things organized.
+**1. Namespace**
+Made a `yolo` namespace to keep everything organized and seperate from other stuff.
 
-### 2. StatefulSet (MongoDB)
-Used StatefulSet instead of Deployment because MongoDB needs:
-- Stable network identity (mongo-0)
-- Persistent storage that survives pod restarts
-- Ordered pod creation/deletion
+**2. StatefulSet (MongoDB)**
+Had to use StatefulSet for Mongo instead of regular Deployment because:
+- MongoDB needs a stable network identity (always mongo-0)
+- Data needs to persist even when pods restart
+- Pods get created/deleted in order
 
-**volumeClaimTemplates:** Automatically creates PVCs for each pod. Set to 5Gi with ReadWriteOnce access mode.
+Used volumeClaimTemplates so it automatically creates PVCs. Set it to 5Gi with ReadWriteOnce access.
 
-### 3. Deployments (Frontend & Backend)
-- **Backend:** 2 replicas for high availability
-- **Frontend:** 2 replicas with LoadBalancer
+**3. Deployments (Frontend & Backend)**
+- Backend: 2 replicas incase one fails
+- Frontend: 2 replicas with LoadBalancer
+- Added health probes and resource limits so they dont use too much
 
-Both have:
-- Health probes (liveness/readiness)
-- Resource limits (CPU/memory)
-- Rolling update strategy
+**4. Services**
 
-### 4. Services
+- **LoadBalancer (Frontend):** Makes the frontend accessible from internet, GKE gives you an external IP automatically
+- **ClusterIP (Backend):** Internal only, frontend talks to backend inside the cluster which is more secure
+- **Headless (MongoDB):** clusterIP set to None, gives direct access to StatefulSet pods
 
-**LoadBalancer (Frontend):**
-- Exposes frontend to internet
-- GKE provisions external IP automatically
-- Routes traffic to frontend pods
+**5. Persistent Storage**
+- PVC: 5Gi with standard-rwo storage class
+- Data survives pod restarts and deletions
+- GKE handles the PersistentVolume provisioning automatically
 
-**ClusterIP (Backend):**
-- Internal only, not exposed
-- Frontend talks to backend inside cluster
-- More secure
+### Why I Chose This Setup
 
-**Headless Service (MongoDB):**
-- clusterIP: None
-- Gives direct access to StatefulSet pods
-- Required for stable network identity
+**Scalability:** Can scale frontend and backend seperately with kubectl scale
 
-### 5. Persistent Storage
-- PVC requests 5Gi storage
-- StorageClass: standard-rwo (ReadWriteOnce)
-- Data survives pod restarts/deletions
-- GKE provisions PersistentVolume automatically
+**High Availability:** Multiple replicas means if one pod dies the app keeps running
 
-## Why This Architecture?
+**Data Persistence:** StatefulSet + PVC ensures database data doesn't get lost
 
-**Scalability:** Can scale frontend/backend independently with `kubectl scale`
+**Security:** Backend isn't exposed to the internet, only frontend is public
 
-**High Availability:** Multiple replicas ensure uptime if a pod fails
+**Cloud Native:** Using GKE managed services makes it easier (LoadBalancer, storage, etc)
 
-**Data Persistence:** StatefulSet + PVC means data survives crashes
+### How I Deployed It
 
-**Security:** Backend not exposed to internet, only accessible internally
-
-**Cloud Native:** Uses GKE managed services (LoadBalancer, storage provisioning)
-
-## Deployment Process
-
-1. Created GKE cluster (2 nodes, e2-small)
+1. Created GKE cluster (2 nodes, e2-small machines)
 2. Applied namespace first
 3. Deployed MongoDB StatefulSet + headless service
 4. Deployed backend + ClusterIP service
 5. Deployed frontend + LoadBalancer service
-6. Verified with `kubectl get all`
+6. Verified everything with `kubectl get all`
 
-## Challenges & Solutions
+### Problems I Hit & Fixed
 
-**Issue 1:** Backend readiness probe failing (404 on root path)
-- **Solution:** Changed from HTTP probe to TCP socket check on port 5000
+**Backend readiness probe kept failing:**
+Root path was returning 404. Changed from HTTP probe to TCP socket check on port 5000 and it worked.
 
-**Issue 2:** GKE required minimum 12GB disk
-- **Solution:** Increased disk size from 10GB to 20GB
+**GKE said disk size too small:**
+Had to increase from 10GB to 20GB cause GKE images need atleast 12GB.
 
-**Issue 3:** Image pull taking too long
-- **Solution:** Pre-pushed images to Docker Hub, used specific tags (v1.0.0)
+**Image pull was taking forever:**
+Pre-pushed images to Docker Hub and used specific tags (v1.0.0) instead of latest.
 
-## Git Workflow
+### Git Workflow
 
-- Created `k8s-deploy` branch for Kubernetes work
-- Tested deployment on Minikube locally first
-- Merged to main after GKE deployment successful
-- Tagged Docker images with semantic versioning (1.0.0)
+- Made a `k8s-deploy` branch for the Kubernetes work
+- Tested everything on Minikube locally first
+- Merged to main after GKE deployment worked
+- Tagged Docker images with v1.0.0 for version control
 
-## Image Tags Best Practice
+### Why I Used Specific Image Tags
 
 Using `rmwangi3/yolo-backend:1.0.0` instead of `:latest` because:
-- Reproducible deployments
-- Easy rollbacks
-- Clear version tracking
-- No surprises from "latest" changing
+- Deployments are reproducible (same image every time)
+- Can rollback easily if something breaks
+- Know exactly which version is running
+- No suprises from "latest" suddenly changing
 
-## Health Checks
-
-**Liveness Probe:** Restarts unhealthy containers
-**Readiness Probe:** Removes unready pods from service endpoints
-
-Ensures only healthy pods receive traffic.
-
-## Cost
-
+### Cost Breakdown
 - 2x e2-small nodes: ~$25/month
 - Persistent disk: ~$0.80/month  
 - LoadBalancer: ~$18/month
-- **Total:** ~$44/month (covered by $300 GCP free credits)
+- **Total:** ~$44/month
 
-## Monitoring Commands
+Good thing Google gives $300 free credits so this doesn't cost me anything yet.
 
+### Monitoring Commands I Use
 ```bash
-# Check pods
+# Check if pods are running
 kubectl -n yolo get pods
 
-# Check services
+# Get the LoadBalancer external IP
 kubectl -n yolo get svc
 
-# View logs
+# View backend logs
 kubectl -n yolo logs -f deployment/backend
-kubectl -n yolo logs -f deployment/frontend
+
+# Check MongoDB logs
 kubectl -n yolo logs mongo-0
 
-# Check PVC
+# Verify storage
 kubectl -n yolo get pvc
 ```
 
-## Previous Stages (Archived)
+---
 
-Earlier stages used Vagrant, Ansible, Terraform, and Docker Compose for local development. See `explanation-ansible-backup.md` for details on the Ansible playbook structure and role dependencies.
+## Earlier Stages: Ansible + Terraform
+
+Before Kubernetes, I used Ansible and Terraform for local development with VirtualBox/Vagrant.
+
+### How the Ansible Playbook Works
+
+Runs in this order:
+```
+pre_tasks → docker → clone_repo → mongodb → backend → client → post_tasks
+```
+
+Each step depends on the previous one. If you change the order stuff breaks.
+
+### What Each Role Does
+
+**Pre-tasks:** Update apt, install git, curl, python3-pip (can't do anything without these)
+
+**Docker:** Install Docker Engine and Compose, start daemon. This has to go first obviously.
+
+**Clone Repo:** Get code from GitHub, create .env file, setup folders
+
+**MongoDB:** Create Docker network and volume, start MongoDB container, wait for it to be ready
+
+**Backend:** Build backend image, start container on port 5000, connect to network
+
+**Client:** Build React frontend, start with nginx on port 3000
+
+**Post-tasks:** Just shows the URLs where you can access the app
+
+### Variables & Tags
+
+Put all config in `vars/main.yml` so I only change port numbers in one place.
+
+Can run specific parts with tags:
+- `--tags setup` - just install Docker and clone repo
+- `--tags containers` - only containers (skip setup)
+- `--skip-tags mongodb` - skip database
+
+### Terraform Part (Stage 2)
+
+Terraform automates VM creation with `local-exec` to run `vagrant up`.
+
+Run it: `cd Stage_two && ansible-playbook playbook.yml -i ../inventory`
+
+### Why Order Matters
+
+- No Docker → nothing can run
+- No repo → can't build images  
+- No MongoDB → backend crashes on startup
+- No backend → frontend has nothing to connect to
+
+Thats why the order is important.
