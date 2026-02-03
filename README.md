@@ -8,7 +8,7 @@ A full-stack e-commerce app running on Google Kubernetes Engine. Built with Reac
 
 ## What's Inside
 
-This is a containerized microservices application deployed on GKE with:
+Containerized microservices on GKE:
 - React frontend (nginx)
 - Node.js/Express API backend
 - MongoDB with persistent storage
@@ -31,9 +31,9 @@ This is a containerized microservices application deployed on GKE with:
 - Rolling updates for zero-downtime deployments
 
 **Services:**
-- Frontend: LoadBalancer (port 80) - exposes app to internet via GKE's external IP
-- Backend: ClusterIP (port 5000) - internal only, not exposed externally
-- MongoDB: Headless service (port 27017) - provides stable DNS for StatefulSet pods
+- Frontend: LoadBalancer (port 80) - exposes app to internet
+- Backend: ClusterIP (port 5000) - internal only
+- MongoDB: Headless service (port 27017) - stable DNS for StatefulSet pods
 
 ### Container Images
 
@@ -41,7 +41,7 @@ Using semantic versioning (not :latest tag):
 - `rmwangi3/yolo-backend:1.0.0`
 - `rmwangi3/yolo-client:1.0.0`
 
-Why version tags? Reproducibility. You always know exactly what's running and can rollback easily if needed.
+Why version tags? Reproducibility and easy rollbacks.
 
 ## Prerequisites
 
@@ -205,10 +205,5 @@ gcloud container clusters delete yolo-cluster --zone us-central1-a
 
 ## Documentation
 
-- [explanation.md](explanation.md) - Detailed implementation choices
+- [explanation.md](explanation.md) - Implementation choices
 - [Stage_two/README.md](Stage_two/README.md) - Terraform/Ansible setup
-
----
-
-**Version:** 1.0.0  
-**Date:** February 2026

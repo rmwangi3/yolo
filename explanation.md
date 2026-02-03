@@ -2,18 +2,18 @@
 
 **Live App:** http://34.121.63.230
 
-This document explains the key decisions made during the Kubernetes deployment for the Week 5 assessment.
+Key decisions for the Kubernetes deployment.
 
 ## 1. Kubernetes Objects Used
 
 ### Why StatefulSet for MongoDB?
 
-I used a **StatefulSet** for MongoDB instead of a regular Deployment because databases need special treatment:
+I used a **StatefulSet** for MongoDB instead of a Deployment because:
 
-- **Stable Storage:** Each pod gets its own persistent volume that sticks with it even if the pod restarts
-- **Stable Network Identity:** Pods get predictable names (mongo-0, mongo-1, etc.) instead of random names
-- **Ordered Operations:** Pods start and stop in a specific order, which is important for databases
-- **Direct Pod Access:** The headless service lets you connect directly to specific pods using DNS
+- **Stable Storage:** Each pod gets its own persistent volume that survives restarts
+- **Stable Network Identity:** Pods get predictable names (mongo-0, mongo-1, etc.)
+- **Ordered Operations:** Pods start and stop in order
+- **Direct Pod Access:** Headless service allows direct pod connections via DNS
 
 With a regular Deployment, you'd lose data every time a pod restarts. StatefulSet solves this by automatically creating a PersistentVolumeClaim for each pod using `volumeClaimTemplates`.
 
@@ -32,12 +32,12 @@ volumeClaimTemplates:
 
 ### Why Deployments for Backend and Frontend?
 
-Used regular **Deployments** for backend and frontend because they're stateless - they don't need to remember anything between restarts:
+Used **Deployments** for backend and frontend because they're stateless:
 
-- Easy to scale horizontally (just add more replicas)
-- Rolling updates work smoothly
-- If a pod dies, Kubernetes replaces it instantly
-- All pods are identical and interchangeable
+- Easy horizontal scaling
+- Smooth rolling updates
+- Auto-replacement of failed pods
+- All pods are interchangeable
 
 Both have 2 replicas for high availability.
 
@@ -53,18 +53,18 @@ I chose a **LoadBalancer** service to expose the frontend to the internet. Here'
 - Only sends traffic to pods that pass health checks
 
 **Why not NodePort?**
-NodePort exposes weird high-numbered ports (like 30000-32767). Users would have to type `http://34.121.63.230:30123` which looks unprofessional.
+Exposes high ports (30000-32767) requiring URLs like `http://34.121.63.230:30123`.
 
 **Why not Ingress?**
-Ingress is overkill for a single application. It's more useful when you have multiple apps/domains and need SSL certificates, routing rules, etc.
+Overkill for a single app. Better for multiple apps/domains with SSL and routing needs.
 
-**The Result:**
-Clean URL (http://34.121.63.230) that automatically load balances across frontend pods.
+**Result:**
+Clean URL (http://34.121.63.230) with automatic load balancing.
 
 ### Internal Services
 
-- **Backend:** ClusterIP service (internal only) - not exposed to internet for security
-- **MongoDB:** Headless service (clusterIP: None) - provides DNS for StatefulSet pods
+- **Backend:** ClusterIP (internal only) - not exposed for security
+- **MongoDB:** Headless service (clusterIP: None) - DNS for StatefulSet pods
 
 ## 3. Persistent Storage
 
@@ -118,16 +118,16 @@ Key commits:
 I used specific version tags (`rmwangi3/yolo-backend:1.0.0`) instead of `:latest`. Here's why:
 
 **Problems with :latest:**
-- The tag can point to different images over time
-- Pod restarts might pull a different version unexpectedly
-- Can't tell what version is actually running
-- Difficult to rollback to previous versions
-- Dev and prod might run different code
+- Tag can point to different images over time
+- Pod restarts might pull different versions
+- Can't determine running version
+- Difficult rollbacks
+- Dev and prod might differ
 
 **Benefits of version tags:**
-- Reproducible deployments - same tag = same image always
-- Easy rollbacks - just change to v1.0.0 → v0.9.0
-- Clear audit trail of what's deployed
+- Reproducible - same tag = same image
+- Easy rollbacks
+- Clear audit trail
 - Intentional updates only
 
 Following semantic versioning:
@@ -140,11 +140,11 @@ Following semantic versioning:
 
 ### Challenge 1: Readiness Probe Failing
 
-**Problem:** Backend pods kept failing readiness checks with 404 errors.
+**Problem:** Backend pods failing readiness checks with 404 errors.
 
-**Cause:** The readiness probe was checking `GET /` but the backend only has `/api/products` endpoint.
+**Cause:** Readiness probe checked `GET /` but backend only has `/api/products`.
 
-**Fix:** Changed from HTTP check to TCP socket check:
+**Fix:** Changed to TCP socket check:
 ```yaml
 readinessProbe:
   tcpSocket:
@@ -156,9 +156,9 @@ Now it just checks if port 5000 is open, which works perfectly.
 
 ### Challenge 2: GKE Disk Size Too Small
 
-**Problem:** Cluster creation failed with "Boot disk size too small" error.
+**Problem:** Cluster creation failed - "Boot disk size too small".
 
-**Cause:** GKE requires minimum 12GB boot disk, I used 10GB initially.
+**Cause:** GKE requires minimum 12GB, used 10GB initially.
 
 **Fix:** Increased to 20GB:
 ```bash
@@ -167,11 +167,11 @@ gcloud container clusters create yolo-cluster --disk-size 20
 
 ### Challenge 3: Slow Image Pulls
 
-**Problem:** First deployment took 5-10 minutes waiting for images to download.
+**Problem:** First deployment took 5-10 minutes for image downloads.
 
 **Fix:** 
-- Pre-pushed images to Docker Hub before deploying
-- Used specific version tags (1.0.0)
+- Pre-pushed images to Docker Hub
+- Used specific version tags
 - Set `imagePullPolicy: IfNotPresent`
 
 Now subsequent deployments take 30-60 seconds.
@@ -219,9 +219,3 @@ Used `deploy.sh` script for repeatable deployments.
 3. **Check cloud provider minimums** - GKE has specific disk size requirements
 4. **StatefulSets are powerful** - Perfect for databases needing persistent storage
 5. **LoadBalancer is simple** - Best choice for single-app external access
-
----
-
-**Version:** 1.0.0  
-**Date:** February 2026  
-**Project:** Week 5 Kubernetes Assessment
