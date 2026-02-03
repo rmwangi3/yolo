@@ -1,58 +1,56 @@
 # Yolo E-Commerce - Kubernetes Deployment
 
-A full-stack e-commerce app running on Google Kubernetes Engine. Built with React frontend, Node.js backend, and MongoDB database.
+Full-stack e-commerce app running on Google Kubernetes Engine. React frontend, Node.js backend, MongoDB database.
 
-## Live Application
+**Live URL:** http://34.121.63.230
 
-**URL:** http://34.121.63.230
+## Overview
 
-## What's Inside
-
-Containerized microservices on GKE:
+Deployed a containerized microservices app on GKE:
 - React frontend (nginx)
 - Node.js/Express API backend
 - MongoDB with persistent storage
-- Load balancing and auto-healing
+- Load balancing & auto-healing
 
 ## Architecture
 
 ### Kubernetes Setup
 
-**Namespace:** `yolo` (keeps everything organized)
+**Namespace:** `yolo` - keeps everything organized in its own space
 
-**StatefulSet:** MongoDB with 5Gi persistent volume
+**StatefulSet for MongoDB** (5Gi persistent volume)
 - Used StatefulSet because MongoDB needs stable storage and network identity
-- Data persists even when pods restart
+- Data persists when pods restart
 - Each pod gets its own PersistentVolumeClaim automatically
 
-**Deployments:** Backend and Frontend (2 replicas each)
-- Stateless services that can scale horizontally
-- Health checks ensure only healthy pods receive traffic
-- Rolling updates for zero-downtime deployments
+**Deployments:** Backend (2 replicas) and Frontend (2 replicas)
+- Stateless services that scale horizontally
+- Health checks make sure only healthy pods get traffic
+- Rolling updates = zero downtime
 
 **Services:**
-- Frontend: LoadBalancer (port 80) - exposes app to internet
+- Frontend: LoadBalancer (port 80) - exposes the app to internet
 - Backend: ClusterIP (port 5000) - internal only
 - MongoDB: Headless service (port 27017) - stable DNS for StatefulSet pods
 
-### Container Images
+### Images
 
-Using semantic versioning (not :latest tag):
+Using semantic versioning instead of :latest:
 - `rmwangi3/yolo-backend:1.0.0`
 - `rmwangi3/yolo-client:1.0.0`
 
-Why version tags? Reproducibility and easy rollbacks.
+Version tags mean you know exactly what's running and can rollback easily.
 
 ## Prerequisites
 
-- GCP account with billing enabled
-- `gcloud` CLI installed
-- `kubectl` v1.20+
+- GCP account with billing
+- gcloud CLI
+- kubectl v1.20+
 - GCP quotas: 2 CPUs, 1 external IP
 
-## Quick Deployment
+## Deployment
 
-### 1. Create GKE Cluster
+### Create GKE Cluster
 
 ```bash
 gcloud container clusters create yolo-cluster \
@@ -66,15 +64,16 @@ gcloud container clusters create yolo-cluster \
 gcloud container clusters get-credentials yolo-cluster --zone us-central1-a
 ```
 
-### 2. Deploy Application
+### Deploy the App
 
+Quick way:
 ```bash
 cd Stage_two
 chmod +x deploy.sh
 ./deploy.sh
 ```
 
-Or manually:
+Manual way:
 ```bash
 kubectl apply -f k8s/namespace.yaml
 kubectl apply -n yolo -f k8s/mongo-headless-service.yaml
@@ -85,33 +84,32 @@ kubectl apply -n yolo -f k8s/frontend-deployment.yaml
 kubectl apply -n yolo -f k8s/frontend-service.yaml
 ```
 
-### 3. Get External IP
+### Get the External IP
 
 ```bash
 kubectl -n yolo get svc frontend
-# Wait for EXTERNAL-IP to appear (may take 2-3 minutes)
+# Wait a few minutes for EXTERNAL-IP
 ```
 
-### 4. Test
+### Test It
 
 ```bash
 curl http://<EXTERNAL-IP>/api/products
-# Should return: []
+# Returns: []
 ```
 
 ## API Endpoints
 
-All endpoints use the base URL: `http://34.121.63.230`
+Base URL: `http://34.121.63.230`
 
-- **GET** `/api/products` - List all products
-- **POST** `/api/products` - Create new product
-- **GET** `/api/products/:id` - Get single product
-- **PUT** `/api/products/:id` - Update product
-- **DELETE** `/api/products/:id` - Delete product
+- GET `/api/products` - list products
+- POST `/api/products` - create product
+- GET `/api/products/:id` - get single product
+- PUT `/api/products/:id` - update product
+- DELETE `/api/products/:id` - delete product
 
 Example:
 ```bash
-# Add a product
 curl -X POST http://34.121.63.230/api/products \
   -H "Content-Type: application/json" \
   -d '{"name":"Laptop","price":999,"description":"Gaming laptop"}'
@@ -119,39 +117,38 @@ curl -X POST http://34.121.63.230/api/products \
 
 ## Troubleshooting
 
-**Pods not starting?**
+Pods not starting?
 ```bash
 kubectl -n yolo get pods
 kubectl -n yolo describe pod <pod-name>
 kubectl -n yolo logs <pod-name>
 ```
 
-**Can't access external IP?**
+Can't access the app?
 ```bash
 kubectl -n yolo get svc frontend
-# Check EXTERNAL-IP is assigned (not <pending>)
+# Make sure EXTERNAL-IP is assigned (not <pending>)
 ```
 
-**Database issues?**
+Database problems?
 ```bash
 kubectl -n yolo exec -it mongo-0 -- mongo
-# Check MongoDB is running
 ```
 
 ## Project Structure
 
 ```
 yolo/
-├── backend/              # Node.js API
+├── backend/
 │   ├── Dockerfile
 │   ├── server.js
 │   └── routes/
-├── client/               # React frontend
+├── client/
 │   ├── Dockerfile
 │   ├── nginx.conf
 │   └── src/
 └── Stage_two/
-    └── k8s/              # Kubernetes manifests
+    └── k8s/
         ├── namespace.yaml
         ├── mongo-statefulset.yaml
         ├── mongo-headless-service.yaml
@@ -161,18 +158,17 @@ yolo/
         └── frontend-service.yaml
 ```
 
-## Technology Stack
+## Tech Stack
 
-- **Frontend:** React, nginx
-- **Backend:** Node.js, Express, Mongoose
-- **Database:** MongoDB
-- **Container:** Docker
-- **Orchestration:** Kubernetes on GKE
-- **CI/CD:** Git, Docker Hub
+- Frontend: React, nginx
+- Backend: Node.js, Express, Mongoose
+- Database: MongoDB
+- Container: Docker
+- Orchestration: Kubernetes on GKE
+- CI/CD: Git, Docker Hub
 
 ## Scaling
 
-Scale deployments up or down:
 ```bash
 kubectl -n yolo scale deployment backend --replicas=3
 kubectl -n yolo scale deployment frontend --replicas=3
@@ -180,30 +176,28 @@ kubectl -n yolo scale deployment frontend --replicas=3
 
 ## Monitoring
 
-Check resource usage:
 ```bash
 kubectl -n yolo top pods
 kubectl -n yolo get events --sort-by='.lastTimestamp'
 ```
 
-## Cost Estimate
+## Cost
 
-Running on GKE (2 x e2-small nodes):
+Running on GKE with 2 e2-small nodes:
 - Compute: ~$25/month
 - Storage: ~$1/month (5Gi)
 - Load Balancer: ~$18/month
-- **Total:** ~$44/month
+- Total: ~$44/month
 
-Covered by $300 GCP free credits.
+(Covered by $300 GCP free credits)
 
 ## Cleanup
 
-Delete everything:
 ```bash
 gcloud container clusters delete yolo-cluster --zone us-central1-a
 ```
 
-## Documentation
+## More Info
 
-- [explanation.md](explanation.md) - Implementation choices
+- [explanation.md](explanation.md) - why I made specific choices
 - [Stage_two/README.md](Stage_two/README.md) - Terraform/Ansible setup
