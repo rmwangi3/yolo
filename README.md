@@ -23,7 +23,7 @@ Deployed a containerized microservices app on GKE:
 - Data persists when pods restart
 - Each pod gets its own PersistentVolumeClaim automatically
 
-**Deployments:** Backend and Frontend (2 replicas each)
+**Deployments:** Backend (3 replicas) and Frontend (2 replicas)
 - Stateless services that scale horizontally
 - Health checks make sure only healthy pods get traffic
 - Rolling updates = zero downtime

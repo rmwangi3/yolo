@@ -31,7 +31,7 @@ Had to use StatefulSet for Mongo instead of regular Deployment because:
 Used volumeClaimTemplates so it automatically creates PVCs. Set it to 5Gi with ReadWriteOnce access.
 
 **3. Deployments (Frontend & Backend)**
-- Backend: 2 replicas for high availability and load distribution
+- Backend: 3 replicas for high availability and load distribution
 - Frontend: 2 replicas with LoadBalancer
 - Added health probes and resource limits so they dont use too much
 
