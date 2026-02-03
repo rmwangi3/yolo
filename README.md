@@ -1,56 +1,57 @@
 # Yolo E-Commerce - Kubernetes Deployment
 
-Full-stack e-commerce app running on Google Kubernetes Engine. React frontend, Node.js backend, MongoDB database.
+This is a full-stack e-commerce application I deployed on Google Kubernetes Engine (GKE). The application uses React for the frontend, Node.js/Express for the backend, and MongoDB as the database.
 
 **Live URL:** http://34.121.63.230
 
 ## Overview
 
-Deployed a containerized microservices app on GKE:
-- React frontend (nginx)
-- Node.js/Express API backend
+This project involves deploying a containerized microservices application on GKE. The main components include:
+- React frontend served through nginx
+- Node.js/Express API for the backend
 - MongoDB with persistent storage
-- Load balancing & auto-healing
+- Load balancing and auto-healing capabilities
 
 ## Architecture
 
-### Kubernetes Setup
+### Kubernetes Resources
 
-**Namespace:** `yolo` - keeps everything organized in its own space
+**Namespace:** I created a `yolo` namespace to keep all the application resources organized and separated from other workloads.
 
-**StatefulSet for MongoDB** (5Gi persistent volume)
-- Used StatefulSet because MongoDB needs stable storage and network identity
-- Data persists when pods restart
-- Each pod gets its own PersistentVolumeClaim automatically
+**StatefulSet for MongoDB** with 5Gi persistent volume
+- I used a StatefulSet instead of a regular Deployment because MongoDB needs stable storage and a consistent network identity
+- When pods restart, they reconnect to the same data
+- Each pod gets its own PersistentVolumeClaim automatically through volumeClaimTemplates
 
-**Deployments:** Backend (3 replicas) and Frontend (2 replicas)
-- Stateless services that scale horizontally
-- Health checks make sure only healthy pods get traffic
-- Rolling updates = zero downtime
+**Deployments:** Backend runs with 3 replicas and Frontend with 2 replicas
+- These are stateless services that can scale horizontally
+- Health checks ensure only healthy pods receive traffic
+- Rolling updates allow for zero downtime during deployments
 
 **Services:**
-- Frontend: LoadBalancer (port 80) - exposes the app to internet
-- Backend: ClusterIP (port 5000) - internal only
-- MongoDB: Headless service (port 27017) - stable DNS for StatefulSet pods
+- Frontend: LoadBalancer service on port 80 to expose the app to the internet
+- Backend: ClusterIP service on port 5000 for internal communication only
+- MongoDB: Headless service on port 27017 to provide stable DNS for StatefulSet pods
 
-### Images
+### Container Images
 
-Using semantic versioning instead of :latest:
+I'm using semantic versioning instead of the latest tag:
 - `rmwangi3/yolo-backend:1.0.0`
 - `rmwangi3/yolo-client:1.0.0`
 
-Version tags mean you know exactly what's running and can rollback easily.
+Using specific version tags helps track exactly what's deployed and makes rollbacks easier if something breaks.
 
 ## Prerequisites
 
-- GCP account with billing
-- gcloud CLI
-- kubectl v1.20+
-- GCP quotas: 2 CPUs, 1 external IP
+To deploy this application, you'll need:
+- GCP account with billing enabled
+- gcloud CLI installed
+- kubectl v1.20 or higher
+- GCP quotas: at least 2 CPUs and 1 external IP
 
-## Deployment
+## Deployment Steps
 
-### Create GKE Cluster
+### 1. Create GKE Cluster
 
 ```bash
 gcloud container clusters create yolo-cluster \
@@ -64,16 +65,16 @@ gcloud container clusters create yolo-cluster \
 gcloud container clusters get-credentials yolo-cluster --zone us-central1-a
 ```
 
-### Deploy the App
+### 2. Deploy the Application
 
-Quick way:
+Quick deployment using the script:
 ```bash
 cd Stage_two
 chmod +x deploy.sh
 ./deploy.sh
 ```
 
-Manual way:
+Or deploy manually:
 ```bash
 kubectl apply -f k8s/namespace.yaml
 kubectl apply -n yolo -f k8s/mongo-headless-service.yaml
@@ -84,31 +85,31 @@ kubectl apply -n yolo -f k8s/frontend-deployment.yaml
 kubectl apply -n yolo -f k8s/frontend-service.yaml
 ```
 
-### Get the External IP
+### 3. Get External IP Address
 
 ```bash
 kubectl -n yolo get svc frontend
-# Wait a few minutes for EXTERNAL-IP
+# Wait a few minutes for the EXTERNAL-IP to be assigned
 ```
 
-### Test It
+### 4. Test the Deployment
 
 ```bash
 curl http://<EXTERNAL-IP>/api/products
-# Returns: []
+# Should return: []
 ```
 
 ## API Endpoints
 
-Base URL: `http://34.121.63.230`
+The application exposes the following endpoints at: `http://34.121.63.230`
 
-- GET `/api/products` - list products
-- POST `/api/products` - create product
-- GET `/api/products/:id` - get single product
-- PUT `/api/products/:id` - update product
-- DELETE `/api/products/:id` - delete product
+- **GET** `/api/products` - List all products
+- **POST** `/api/products` - Create a new product
+- **GET** `/api/products/:id` - Get a single product
+- **PUT** `/api/products/:id` - Update a product
+- **DELETE** `/api/products/:id` - Delete a product
 
-Example:
+Example usage:
 ```bash
 curl -X POST http://34.121.63.230/api/products \
   -H "Content-Type: application/json" \
@@ -117,20 +118,20 @@ curl -X POST http://34.121.63.230/api/products \
 
 ## Troubleshooting
 
-Pods not starting?
+If pods aren't starting:
 ```bash
 kubectl -n yolo get pods
 kubectl -n yolo describe pod <pod-name>
 kubectl -n yolo logs <pod-name>
 ```
 
-Can't access the app?
+If you can't access the application:
 ```bash
 kubectl -n yolo get svc frontend
-# Make sure EXTERNAL-IP is assigned (not <pending>)
+# Make sure the EXTERNAL-IP is assigned and not showing <pending>
 ```
 
-Database problems?
+For database connection issues:
 ```bash
 kubectl -n yolo exec -it mongo-0 -- mongo
 ```
@@ -158,46 +159,49 @@ yolo/
         └── frontend-service.yaml
 ```
 
-## Tech Stack
+## Technology Stack
 
-- Frontend: React, nginx
-- Backend: Node.js, Express, Mongoose
-- Database: MongoDB
-- Container: Docker
-- Orchestration: Kubernetes on GKE
-- CI/CD: Git, Docker Hub
+- **Frontend:** React with nginx as the web server
+- **Backend:** Node.js with Express framework and Mongoose for MongoDB interaction
+- **Database:** MongoDB
+- **Containerization:** Docker
+- **Orchestration:** Kubernetes on Google Kubernetes Engine
+- **Version Control:** Git with Docker Hub for image registry
 
 ## Scaling
 
+You can scale the deployments up or down as needed:
 ```bash
-kubectl -n yolo scale deployment backend --replicas=3
+kubectl -n yolo scale deployment backend --replicas=5
 kubectl -n yolo scale deployment frontend --replicas=3
 ```
 
 ## Monitoring
 
+To check resource usage and events:
 ```bash
 kubectl -n yolo top pods
 kubectl -n yolo get events --sort-by='.lastTimestamp'
 ```
 
-## Cost
+## Cost Estimate
 
-Running on GKE with 2 e2-small nodes:
-- Compute: ~$25/month
-- Storage: ~$1/month (5Gi)
+Running this setup on GKE with 2 e2-small nodes costs approximately:
+- Compute resources: ~$25/month
+- Persistent storage: ~$1/month (5Gi)
 - Load Balancer: ~$18/month
-- Total: ~$44/month
+- **Total: ~$44/month**
 
-(Covered by $300 GCP free credits)
+This is covered by the $300 GCP free credits available for students.
 
 ## Cleanup
 
+To delete the entire cluster and all resources:
 ```bash
 gcloud container clusters delete yolo-cluster --zone us-central1-a
 ```
 
-## More Info
+## Additional Documentation
 
-- [explanation.md](explanation.md) - why I made specific choices
-- [Stage_two/README.md](Stage_two/README.md) - Terraform/Ansible setup
+- [explanation.md](explanation.md) - Detailed explanation of implementation choices
+- [Stage_two/README.md](Stage_two/README.md) - Information about Terraform and Ansible setup
