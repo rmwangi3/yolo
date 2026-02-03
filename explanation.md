@@ -69,7 +69,7 @@ The deployment process I followed:
 3. Deployed MongoDB StatefulSet along with the headless service
 4. Deployed the backend with its ClusterIP service
 5. Deployed the frontend with the LoadBalancer service
-6. Verified everything was running correctly using `kubectl get all`
+6. Verified everything was running correctly using `kubectl -n yolo get all`
 
 ### Problems I Hit & How I Fixed Them
 
